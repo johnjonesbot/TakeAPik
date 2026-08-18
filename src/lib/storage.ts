@@ -1,3 +1,4 @@
+import type { Readable } from "node:stream";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -5,6 +6,7 @@ import {
   PutObjectCommand,
   S3Client
 } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getEnv } from "@/lib/env";
 
@@ -22,6 +24,9 @@ export interface ObjectStorage {
   createSignedGetUrl(key: string, expiresSeconds: number): Promise<string>;
   statObject(key: string): Promise<StoredObjectStat | null>;
   getObjectBytes(key: string): Promise<Buffer | null>;
+  /** Streaming pair used by the export worker so archives never sit in memory. */
+  getObjectStream(key: string): Promise<Readable | null>;
+  putObjectStream(key: string, stream: Readable, contentType: string): Promise<void>;
   deleteObject(key: string): Promise<void>;
 }
 
@@ -74,6 +79,23 @@ class S3Storage implements ObjectStorage {
     } catch {
       return null;
     }
+  }
+
+  async getObjectStream(key: string): Promise<Readable | null> {
+    try {
+      const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+      return (result.Body as Readable | undefined) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async putObjectStream(key: string, stream: Readable, contentType: string): Promise<void> {
+    const upload = new Upload({
+      client: this.client,
+      params: { Bucket: this.bucket, Key: key, Body: stream, ContentType: contentType }
+    });
+    await upload.done();
   }
 
   async deleteObject(key: string): Promise<void> {

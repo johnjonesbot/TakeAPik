@@ -7,6 +7,9 @@ export type ProvisionedTenant = ProvisionTenantResult;
 /** Order respects foreign keys; audit_logs is included because tests assert on it. */
 const TENANT_TABLES = [
   "audit_logs",
+  "exports",
+  "jobs",
+  "idempotency_keys",
   "rate_limit_buckets",
   "login_handoffs",
   "photos",

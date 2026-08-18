@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 import type { ObjectStorage, StoredObjectStat } from "@/lib/storage";
 
 /** In-memory object store so upload tests stay hermetic. */
@@ -26,6 +27,19 @@ export class FakeStorage implements ObjectStorage {
 
   async getObjectBytes(key: string): Promise<Buffer | null> {
     return this.objects.get(key)?.bytes ?? null;
+  }
+
+  async getObjectStream(key: string): Promise<Readable | null> {
+    const object = this.objects.get(key);
+    return object ? Readable.from(object.bytes) : null;
+  }
+
+  async putObjectStream(key: string, stream: Readable, contentType: string): Promise<void> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    this.objects.set(key, { bytes: Buffer.concat(chunks), contentType });
   }
 
   async deleteObject(key: string): Promise<void> {

@@ -154,3 +154,6 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .chip-failed { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .enrollment-uri { background: rgba(3,1,8,.4); border: 1px solid var(--line); border-radius: 12px; font-family: ui-monospace, monospace; font-size: 12px; overflow-wrap: anywhere; padding: 12px; }
 .mfa-confirm { display: grid; gap: 12px; }
+
+/* Archive confirmation */
+.archive-confirm { border: 1px solid rgba(255, 116, 116, 0.35); border-radius: 16px; display: grid; gap: 12px; padding: 18px; }

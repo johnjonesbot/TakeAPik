@@ -1,4 +1,5 @@
 import { AdminLoginForm } from "@/components/admin-login-form";
+import { TenantsManager } from "@/components/super-admin/tenants-manager";
 import { getAuthorizedPageActor, getPageTenant } from "@/lib/page-context";
 
 export const dynamic = "force-dynamic";
@@ -45,9 +46,7 @@ export default async function SuperAdminPage() {
       </nav>
       <section className="portal-body">
         <h1 className="portal-heading">Tenants</h1>
-        <p className="portal-placeholder">
-          Provisioning and archive controls are wired to the platform services and arrive here next.
-        </p>
+        <TenantsManager />
       </section>
     </main>
   );

@@ -66,12 +66,14 @@ Acceptance: disabled members lose active sessions; send-all never duplicates suc
 
 ## Phase 5 — Export, archival, and operations
 
-- [ ] Background job runner with locking, backoff, dead-letter status, and metrics
-- [ ] Admin-only streaming ZIP export with one-active-job constraint and expiring URL
-- [ ] Super-admin archive confirmation, step-up auth, session/invite revocation, read-only enforcement
-- [ ] Retention/deletion jobs for failed uploads, exports, and archived tenants
-- [ ] Backup/restore, rollback, certificate, and incident runbooks
-- [ ] Production monitoring, alerts, dashboards, and synthetic tenant check
+- [x] Background job runner with locking, backoff, dead-letter status, and metrics
+- [x] Admin-only streaming ZIP export with one-active-job constraint and expiring URL
+- [x] Super-admin archive confirmation, step-up auth, session/invite revocation, read-only enforcement
+- [x] Retention/deletion jobs for failed uploads, exports, and archived tenants
+      (archived-tenant media deletion stays a documented manual runbook per policy)
+- [x] Backup/restore, rollback, certificate, and incident runbooks (`docs/OPERATIONS.md`)
+- [x] Production monitoring, alerts, dashboards, and synthetic tenant check
+      (documented baseline in `docs/OPERATIONS.md`; wiring to a provider happens at deploy time)
 
 Acceptance: export does not load all files into memory or proxy bytes through web; archived tenant mutations fail; backup restore rehearsal succeeds.
 
