@@ -12,18 +12,25 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "RUN_INTEGRATION=1 vitest run",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:bootstrap-super-admin": "tsx scripts/bootstrap-super-admin.ts"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "next": "16.3.1",
+    "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.1.12"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "tsx": "^4.23.12",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   }

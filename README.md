@@ -19,12 +19,24 @@ Open `http://localhost:3000`. For subdomain testing, use `http://jj.localhost:30
 ## Commands
 
 ```bash
-npm run dev        # local development
-npm run build      # production build
-npm run start      # production server
-npm run typecheck  # TypeScript validation
-npm test           # unit tests
+npm run dev                     # local development
+npm run build                   # production build
+npm run start                   # production server
+npm run typecheck               # TypeScript validation
+npm test                        # unit tests
+npm run test:integration        # integration tests (needs the docker compose database)
+npm run db:migrate              # apply db/migrations to DATABASE_URL
+npm run db:bootstrap-super-admin # create the first super-admin, then unset the bootstrap vars
 ```
+
+## Local database
+
+```bash
+docker compose up -d   # PostgreSQL 16 on 127.0.0.1:5432 (user/db: takeapik)
+npm run db:migrate
+```
+
+Integration tests create and migrate a separate `takeapik_test` database automatically.
 
 ## Repository map
 

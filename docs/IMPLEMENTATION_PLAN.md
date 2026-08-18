@@ -14,13 +14,13 @@ Acceptance: `npm run typecheck`, `npm test`, and `npm run build` pass; root page
 
 ## Phase 1 — Persistence and tenant core
 
-- [ ] Add migration tooling and split `db/schema.sql` into numbered migrations
-- [ ] Add startup environment validation and structured/redacted logging
-- [ ] Implement typed repositories; tenant ID mandatory in every tenant-owned method
-- [ ] Implement hostname → active tenant lookup and archived/not-found behavior
-- [ ] Implement super-admin bootstrap command that is safe to rerun and then disable
-- [ ] Add tenant provisioning transaction and collision-safe initials algorithm (`jj`, `jj1a`, …)
-- [ ] Add audit service and append-only privileged-action events
+- [x] Add migration tooling and split `db/schema.sql` into numbered migrations
+- [x] Add startup environment validation and structured/redacted logging
+- [x] Implement typed repositories; tenant ID mandatory in every tenant-owned method
+- [x] Implement hostname → active tenant lookup and archived/not-found behavior
+- [x] Implement super-admin bootstrap command that is safe to rerun and then disable
+- [x] Add tenant provisioning transaction and collision-safe initials algorithm (`jj`, `jj1a`, …)
+- [x] Add audit service and append-only privileged-action events
 
 Acceptance: integration tests prove resources cannot be read/changed across tenants; concurrent slug provisioning produces unique results.
 
