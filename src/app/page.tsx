@@ -53,10 +53,10 @@ function TenantLogin({ albumName }: { albumName: string }) {
   );
 }
 
-async function TenantAlbum({ albumName }: { albumName: string }) {
+async function TenantAlbum({ albumName, isAdmin }: { albumName: string; isAdmin: boolean }) {
   return (
     <main className="portal-shell">
-      <TenantNav albumName={albumName} surface="friend" />
+      <TenantNav albumName={albumName} isAdmin={isAdmin} />
       <section className="portal-body portal-body-wide">
         <h1 className="portal-heading">The album</h1>
         <PhotoGallery />
@@ -84,5 +84,5 @@ export default async function HomePage() {
   if (!authorized || authorized.actor.kind === "super-admin") {
     return <TenantLogin albumName={tenant.context.displayName} />;
   }
-  return <TenantAlbum albumName={tenant.context.displayName} />;
+  return <TenantAlbum albumName={tenant.context.displayName} isAdmin={authorized.actor.kind === "admin"} />;
 }

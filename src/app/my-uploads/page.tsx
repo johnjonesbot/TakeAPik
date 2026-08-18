@@ -13,7 +13,10 @@ export default async function MyUploadsPage() {
 
   return (
     <main className="portal-shell">
-      <TenantNav albumName={authorized.tenant.context.displayName} surface="friend" />
+      <TenantNav
+        albumName={authorized.tenant.context.displayName}
+        isAdmin={authorized.actor.kind === "admin"}
+      />
       <section className="portal-body">
         <h1 className="portal-heading">My uploads</h1>
         <MyUploads />

@@ -2,15 +2,10 @@
 
 import { usePathname } from "next/navigation";
 
-const FRIEND_LINKS = [
+const MEMBER_LINKS = [
   { href: "/", label: "Album" },
   { href: "/upload", label: "Upload" },
   { href: "/my-uploads", label: "My uploads" }
-] as const;
-
-const ADMIN_LINKS = [
-  { href: "/", label: "Album" },
-  { href: "/admin", label: "Settings" }
 ] as const;
 
 async function logout(): Promise<void> {
@@ -18,9 +13,19 @@ async function logout(): Promise<void> {
   window.location.assign("/");
 }
 
-export function TenantNav({ albumName, surface }: { albumName: string; surface: "friend" | "admin" }) {
+interface TenantNavProps {
+  albumName: string;
+  /**
+   * Adds the Settings link. Purely cosmetic: every admin page and API route
+   * re-verifies the session's role server-side, so hiding or forging this
+   * link changes nothing about what a session can actually do.
+   */
+  isAdmin: boolean;
+}
+
+export function TenantNav({ albumName, isAdmin }: TenantNavProps) {
   const pathname = usePathname();
-  const links = surface === "admin" ? ADMIN_LINKS : FRIEND_LINKS;
+  const links = isAdmin ? [...MEMBER_LINKS, { href: "/admin", label: "Settings" } as const] : MEMBER_LINKS;
 
   return (
     <nav className="tenant-nav" aria-label="Album navigation">

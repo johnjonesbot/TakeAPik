@@ -43,7 +43,7 @@ export default async function AdminPage() {
 
   return (
     <main className="portal-shell">
-      <TenantNav albumName={tenant.context.displayName} surface="admin" />
+      <TenantNav albumName={tenant.context.displayName} isAdmin />
       <section className="portal-body portal-body-wide">
         <h1 className="portal-heading">Settings</h1>
 
