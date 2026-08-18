@@ -1,3 +1,12 @@
-Keys & Secrets/
-.mcp.json
+node_modules/
+.next/
+out/
+coverage/
+.env
+.env.local
+.env.*.local
+!.env.example
+*.log
+*.tsbuildinfo
 .DS_Store
+.claude/settings.local.json
