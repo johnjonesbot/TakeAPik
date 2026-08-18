@@ -26,13 +26,13 @@ Acceptance: integration tests prove resources cannot be read/changed across tena
 
 ## Phase 2 — Authentication and portals
 
-- [ ] Implement opaque hashed sessions and host-only secure cookies
-- [ ] Friend login: normalized event name + member email + eight-digit code
-- [ ] Admin password login, Argon2id hashing, password change, session revocation
-- [ ] MFA enrollment/challenge for admins and mandatory MFA for super-admin
-- [ ] CSRF/origin validation and distributed-ready rate-limit interface
-- [ ] Build sticky tenant navigation, album shell, admin shell, and super-admin shell
-- [ ] Enforce authorization matrix in services and route tests
+- [x] Implement opaque hashed sessions and host-only secure cookies
+- [x] Friend login: normalized event name + member email + eight-digit code
+- [x] Admin password login, Argon2id hashing, password change, session revocation
+- [x] MFA enrollment/challenge for admins and mandatory MFA for super-admin
+- [x] CSRF/origin validation and distributed-ready rate-limit interface
+- [x] Build sticky tenant navigation, album shell, admin shell, and super-admin shell
+- [x] Enforce authorization matrix in services and route tests
 
 Acceptance: 24-hour expiry is enforced server-side; generic login failures do not enumerate data; friend/admin/super-admin boundaries pass tests.
 

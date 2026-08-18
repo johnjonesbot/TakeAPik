@@ -41,7 +41,8 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 
 | Method | Endpoint | Notes |
 |---|---|---|
-| `POST` | `/api/v1/auth/friend` | Event name + email + 8-digit code; rate-limited |
+| `POST` | `/api/v1/auth/friend` | Event name + email + 8-digit code; rate-limited. On the root host it returns a single-use 60-second handoff instead of a cookie |
+| `POST` | `/api/v1/auth/friend/handoff` | Tenant host only. Consumes a root-login handoff token (cross-subdomain form POST) and sets the host-only session cookie |
 | `POST` | `/api/v1/auth/admin` | Admin email/password and optional MFA challenge |
 | `POST` | `/api/v1/auth/logout` | Revokes current session and clears cookie |
 | `GET` | `/api/v1/session` | Minimal actor and tenant context |

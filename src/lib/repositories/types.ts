@@ -8,6 +8,8 @@ export interface PlatformUserRow {
   password_hash: string;
   display_name: string;
   is_super_admin: boolean;
+  mfa_totp_secret_encrypted: string | null;
+  mfa_enabled_at: Date | null;
   disabled_at: Date | null;
   created_at: Date;
   updated_at: Date;

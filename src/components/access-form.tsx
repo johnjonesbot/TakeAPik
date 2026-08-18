@@ -2,19 +2,75 @@
 
 import { FormEvent, useState } from "react";
 
-export function AccessForm() {
-  const [message, setMessage] = useState("");
+interface AccessFormProps {
+  /** "root" locates the album and follows a handoff; "tenant" signs in directly. */
+  surface?: "root" | "tenant";
+  eventNamePlaceholder?: string;
+}
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+interface FriendLoginResponse {
+  data?: { handoff?: { token: string; action: string } };
+  error?: { message?: string };
+}
+
+/** Cross-subdomain navigation POST that lets the tenant host set its cookie. */
+function submitHandoff(action: string, token: string): void {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+  const field = document.createElement("input");
+  field.type = "hidden";
+  field.name = "token";
+  field.value = token;
+  form.appendChild(field);
+  document.body.appendChild(form);
+  form.submit();
+}
+
+export function AccessForm({ surface = "root", eventNamePlaceholder = "Maya & Leo" }: AccessFormProps) {
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage("The login service is scheduled for Phase 2 of the build.");
+    if (busy) return;
+    setBusy(true);
+    setMessage("");
+
+    const formData = new FormData(event.currentTarget);
+    try {
+      const response = await fetch("/api/v1/auth/friend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventName: formData.get("event"),
+          email: formData.get("email"),
+          accessCode: formData.get("code")
+        })
+      });
+      const payload = (await response.json()) as FriendLoginResponse;
+      if (!response.ok) {
+        setMessage(payload.error?.message ?? "Something went wrong; try again");
+        return;
+      }
+      if (surface === "root" && payload.data?.handoff) {
+        setMessage("Opening your album…");
+        submitHandoff(payload.data.handoff.action, payload.data.handoff.token);
+        return;
+      }
+      window.location.assign("/");
+    } catch {
+      setMessage("Network trouble; try again");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <form className="access-card" onSubmit={submit} aria-label="Access an event album">
       <div className="field">
         <label htmlFor="event">Event name</label>
-        <input id="event" name="event" autoComplete="organization" placeholder="Maya & Leo" required />
+        <input id="event" name="event" autoComplete="organization" placeholder={eventNamePlaceholder} required />
       </div>
       <div className="field">
         <label htmlFor="email">Your email</label>
@@ -33,7 +89,9 @@ export function AccessForm() {
           required
         />
       </div>
-      <button type="submit">Open the album <span aria-hidden="true">↗</span></button>
+      <button type="submit" disabled={busy}>
+        {busy ? "Checking…" : "Open the album"} <span aria-hidden="true">↗</span>
+      </button>
       <p className="form-status" aria-live="polite">{message}</p>
     </form>
   );

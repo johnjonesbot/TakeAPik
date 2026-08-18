@@ -1,3 +1,4 @@
+import "./load-env";
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
