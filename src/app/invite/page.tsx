@@ -42,7 +42,7 @@ export default async function InvitePage({ searchParams }: { searchParams: Promi
         <p className="intro">
           You&apos;re invited. Enter the 8-digit access code from your host to open the album.
         </p>
-        <AccessForm surface="tenant" defaultEventName={invite.eventName} defaultEmail={invite.membershipEmail} />
+        <AccessForm surface="tenant" defaultEmail={invite.membershipEmail} />
       </section>
     </main>
   );

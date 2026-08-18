@@ -46,8 +46,8 @@ function TenantLogin({ albumName }: { albumName: string }) {
       </header>
       <section className="tenant-login">
         <h1>{albumName}</h1>
-        <p className="intro">Enter the event details from your invitation to open the album.</p>
-        <AccessForm surface="tenant" eventNamePlaceholder="Event name from your invite" />
+        <p className="intro">Enter your email and the event&apos;s 8-digit access code to open the album.</p>
+        <AccessForm surface="tenant" />
       </section>
     </main>
   );

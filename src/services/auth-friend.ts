@@ -1,6 +1,6 @@
 import { getPool, query } from "@/lib/db";
 import { hashAccessCode, verifyAccessCode } from "@/lib/access-code";
-import { normalizeEmail, normalizeEventName } from "@/lib/normalize";
+import { normalizeEmail } from "@/lib/normalize";
 import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
 import { findEventByTenant } from "@/lib/repositories/events";
 import { findActiveMembershipByEmail } from "@/lib/repositories/memberships";
@@ -11,7 +11,6 @@ import type { TenantContext } from "@/services/tenant-context";
 
 export interface FriendLoginInput {
   tenant: TenantContext;
-  eventName: string;
   email: string;
   accessCode: string;
   ipHash?: string;
@@ -30,10 +29,10 @@ function dummyCodeHash(): Promise<string> {
 }
 
 /**
- * Friend login: normalized event name, active member email, and the event's
- * eight-digit code must all match the host-resolved tenant. Failures are
- * uniform and code verification always runs, so responses do not reveal
- * which factor was wrong or which events/emails exist.
+ * Friend login (ADR-003): an active member email and the event's eight-digit
+ * code must both match the host-resolved tenant. Failures are uniform and
+ * code verification always runs, so responses do not reveal which factor was
+ * wrong or which emails exist.
  */
 export async function loginFriend(
   input: FriendLoginInput,
@@ -53,12 +52,10 @@ export async function loginFriend(
     findActiveMembershipByEmail(db, input.tenant.tenantId, email)
   ]);
 
-  const eventNameMatches =
-    event !== null && normalizeEventName(event.name) === normalizeEventName(input.eventName);
-  const codeHash = event && membership && eventNameMatches ? event.access_code_hash : await dummyCodeHash();
+  const codeHash = event && membership ? event.access_code_hash : await dummyCodeHash();
   const codeMatches = await verifyAccessCode(codeHash, input.accessCode);
 
-  if (!event || !membership || !eventNameMatches || !codeMatches) {
+  if (!event || !membership || !codeMatches) {
     await writeAuditEvent(db, {
       tenantId: input.tenant.tenantId,
       action: "auth.friend.login.failure",
@@ -91,7 +88,6 @@ export async function loginFriend(
 }
 
 export interface LocateFriendLoginInput {
-  eventName: string;
   email: string;
   accessCode: string;
   ipHash?: string;
@@ -105,16 +101,16 @@ export type LocateFriendLoginResult =
 interface CandidateRow {
   tenant_id: string;
   tenant_slug: string;
-  event_name: string;
   access_code_hash: string;
   membership_id: string;
 }
 
 /**
- * Root-domain friend login. All three factors must match one active tenant;
- * the result is a single-use handoff the browser presents on the tenant
- * subdomain, where the host-only session cookie can be set. Membership email
- * is the selective factor, so the candidate set stays tiny.
+ * Root-domain friend login (ADR-003): email plus access code must match one
+ * active tenant; the result is a single-use handoff the browser presents on
+ * the tenant subdomain, where the host-only session cookie can be set.
+ * Membership email is the selective factor, so the candidate set stays tiny;
+ * the random code disambiguates when one email belongs to several albums.
  */
 export async function locateFriendLogin(
   input: LocateFriendLoginInput,
@@ -131,7 +127,7 @@ export async function locateFriendLogin(
 
   const candidates = await query<CandidateRow>(
     db,
-    `SELECT t.id AS tenant_id, t.slug AS tenant_slug, e.name AS event_name,
+    `SELECT t.id AS tenant_id, t.slug AS tenant_slug,
             e.access_code_hash, m.id AS membership_id
      FROM memberships m
      JOIN tenants t ON t.id = m.tenant_id AND t.status = 'active'
@@ -141,10 +137,8 @@ export async function locateFriendLogin(
     [email]
   );
 
-  const wantedName = normalizeEventName(input.eventName);
   let matched: CandidateRow | null = null;
   for (const candidate of candidates) {
-    if (normalizeEventName(candidate.event_name) !== wantedName) continue;
     if (await verifyAccessCode(candidate.access_code_hash, input.accessCode)) {
       matched = candidate;
       break;

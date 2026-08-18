@@ -5,9 +5,7 @@ import { FormEvent, useState } from "react";
 interface AccessFormProps {
   /** "root" locates the album and follows a handoff; "tenant" signs in directly. */
   surface?: "root" | "tenant";
-  eventNamePlaceholder?: string;
   /** Prefills from an invitation link; the access code is always typed. */
-  defaultEventName?: string;
   defaultEmail?: string;
 }
 
@@ -30,12 +28,7 @@ function submitHandoff(action: string, token: string): void {
   form.submit();
 }
 
-export function AccessForm({
-  surface = "root",
-  eventNamePlaceholder = "Maya & Leo",
-  defaultEventName,
-  defaultEmail
-}: AccessFormProps) {
+export function AccessForm({ surface = "root", defaultEmail }: AccessFormProps) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -51,7 +44,6 @@ export function AccessForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          eventName: formData.get("event"),
           email: formData.get("email"),
           accessCode: formData.get("code")
         })
@@ -76,17 +68,6 @@ export function AccessForm({
 
   return (
     <form className="access-card" onSubmit={submit} aria-label="Access an event album">
-      <div className="field">
-        <label htmlFor="event">Event name</label>
-        <input
-          id="event"
-          name="event"
-          autoComplete="organization"
-          placeholder={eventNamePlaceholder}
-          defaultValue={defaultEventName}
-          required
-        />
-      </div>
       <div className="field">
         <label htmlFor="email">Your email</label>
         <input

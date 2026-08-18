@@ -6,7 +6,6 @@ import { SESSION_COOKIE_NAME, sessionCookieOptions } from "@/lib/session-cookie"
 import { locateFriendLogin, loginFriend } from "@/services/auth-friend";
 
 const bodySchema = z.object({
-  eventName: z.string().min(1).max(200),
   email: z.string().email().max(320),
   accessCode: z.string().regex(/^\d{8}$/, "Enter the eight-digit code")
 });
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
     // Root-domain login: locate the album from all three factors and hand the
     // browser to the tenant subdomain, where the session cookie can be set.
     const located = await locateFriendLogin({
-      eventName: parsed.data.eventName,
       email: parsed.data.email,
       accessCode: parsed.data.accessCode,
       ipHash: requestIpHash(request)
@@ -38,7 +36,7 @@ export async function POST(request: NextRequest) {
       return jsonError("RATE_LIMITED", "Too many attempts; try again later", { requestId });
     }
     if (located.outcome === "failure") {
-      return jsonError("UNAUTHENTICATED", "Event name, email, or code is incorrect", { requestId });
+      return jsonError("UNAUTHENTICATED", "Email or access code is incorrect", { requestId });
     }
     const rootDomain = request.headers.get("host") ?? "";
     const protocol = request.nextUrl.protocol;
@@ -55,7 +53,6 @@ export async function POST(request: NextRequest) {
 
   const result = await loginFriend({
     tenant: tenant.context,
-    eventName: parsed.data.eventName,
     email: parsed.data.email,
     accessCode: parsed.data.accessCode,
     ipHash: requestIpHash(request),
@@ -66,7 +63,7 @@ export async function POST(request: NextRequest) {
     return jsonError("RATE_LIMITED", "Too many attempts; try again later", { requestId });
   }
   if (result.outcome === "failure") {
-    return jsonError("UNAUTHENTICATED", "Event name, email, or code is incorrect", { requestId });
+    return jsonError("UNAUTHENTICATED", "Email or access code is incorrect", { requestId });
   }
 
   const response = jsonSuccess({ actor: { kind: "friend", membershipId: result.membershipId } }, requestId);

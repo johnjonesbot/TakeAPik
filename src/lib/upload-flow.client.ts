@@ -75,7 +75,7 @@ export async function uploadPreparedImage(
   originalFilename: string,
   description: string,
   onProgress: (fraction: number) => void
-): Promise<void> {
+): Promise<{ photoId: string }> {
   const intentResponse = await fetch("/api/v1/uploads", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -104,4 +104,5 @@ export async function uploadPreparedImage(
   if (!completeResponse.ok) {
     throw new UploadError(complete.error?.message ?? "The photo failed verification.");
   }
+  return { photoId: intent.data.photoId };
 }

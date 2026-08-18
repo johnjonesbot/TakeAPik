@@ -157,3 +157,9 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 
 /* Archive confirmation */
 .archive-confirm { border: 1px solid rgba(255, 116, 116, 0.35); border-radius: 16px; display: grid; gap: 12px; padding: 18px; }
+
+/* Cover picker */
+.cover-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; margin-bottom: 8px; }
+.cover-actions .panel-note { flex: 1; min-width: 240px; }
+.cover-upload-button { cursor: pointer; }
+.cover-upload-button input { display: none; }

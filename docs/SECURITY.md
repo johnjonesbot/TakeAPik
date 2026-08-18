@@ -22,6 +22,7 @@ Private photographs, guest emails, admin credentials, access codes, session/invi
 - Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`, host-only.
 - Rotate/revoke sessions on privilege changes, password change, membership disable, access-code rotation (policy choice), and archive.
 - Use generic login failures and constant-behavior comparisons to limit account/event enumeration.
+- Guest login is member email + eight-digit access code (ADR-003); both must match the host-resolved tenant, and the code is verified with a keyed slow hash even when the email is unknown.
 
 ### Web protections
 

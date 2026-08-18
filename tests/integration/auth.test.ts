@@ -25,30 +25,20 @@ describe("authentication", () => {
     await closePool();
   });
 
-  it("friend login succeeds only when event name, email, and code all match the tenant", async () => {
+  it("friend login succeeds only when email and code both match the tenant", async () => {
     const tenant = await provisionTestTenant({ eventName: "Maya & Leo" });
     const context = toTenantContext(tenant.tenant);
     const email = tenant.owner.email;
 
-    const ok = await loginFriend(
-      { tenant: context, eventName: "  MAYA  &  LEO ", email, accessCode: tenant.accessCode },
-      noLimit
-    );
+    const ok = await loginFriend({ tenant: context, email, accessCode: tenant.accessCode }, noLimit);
     expect(ok.outcome).toBe("success");
 
-    const wrongName = await loginFriend(
-      { tenant: context, eventName: "Other Party", email, accessCode: tenant.accessCode },
-      noLimit
-    );
     const wrongEmail = await loginFriend(
-      { tenant: context, eventName: "Maya & Leo", email: "nobody@example.test", accessCode: tenant.accessCode },
+      { tenant: context, email: "nobody@example.test", accessCode: tenant.accessCode },
       noLimit
     );
-    const wrongCode = await loginFriend(
-      { tenant: context, eventName: "Maya & Leo", email, accessCode: "00000001" },
-      noLimit
-    );
-    expect([wrongName.outcome, wrongEmail.outcome, wrongCode.outcome]).toEqual(["failure", "failure", "failure"]);
+    const wrongCode = await loginFriend({ tenant: context, email, accessCode: "00000001" }, noLimit);
+    expect([wrongEmail.outcome, wrongCode.outcome]).toEqual(["failure", "failure"]);
   });
 
   it("friend login rejects a valid code presented against another tenant", async () => {
@@ -58,7 +48,6 @@ describe("authentication", () => {
     const crossTenant = await loginFriend(
       {
         tenant: toTenantContext(b.tenant),
-        eventName: "Event A",
         email: a.owner.email,
         accessCode: a.accessCode
       },
@@ -71,7 +60,7 @@ describe("authentication", () => {
     const tenant = await provisionTestTenant({ eventName: "Maya & Leo" });
 
     const located = await locateFriendLogin(
-      { eventName: "maya & leo", email: tenant.owner.email, accessCode: tenant.accessCode },
+      { email: tenant.owner.email, accessCode: tenant.accessCode },
       noLimit
     );
     expect(located.outcome).toBe("success");
@@ -217,7 +206,6 @@ describe("authentication", () => {
     const attempt = () =>
       loginFriend({
         tenant: context,
-        eventName: "Wrong",
         email: "nobody@example.test",
         accessCode: "00000000",
         ipHash: "fixed-ip-hash"

@@ -18,7 +18,7 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 
 - Derive tenant context from a normalized, allow-listed hostname; never trust a tenant ID from the browser.
 - Every tenant-owned database query includes `tenant_id`, even when querying by globally unique ID.
-- Guest login requires a normalized event name, a member email match, and the event's eight-digit code.
+- Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant comes from the hostname, never from input.
 - Store access codes, invite tokens, session tokens, and passwords only as strong one-way hashes. Never log them.
 - Guest sessions expire after 24 hours and use `HttpOnly`, `Secure`, `SameSite=Lax`, host-only cookies.
 - Friends can read the album and manage only their own uploads. Event admins can manage only their tenant. Only super-admins provision/archive tenants; only event admins can request full-album exports.
@@ -52,3 +52,13 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Mobile layout and keyboard flow work at 320 px width.
 - Database mutations are transactional where partial completion would be harmful.
 - Documentation matches the behavior shipped.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -110,3 +110,14 @@ Only an event admin can request a full export. A background job streams tenant o
 **Alternatives:** tenant path prefixes and user-provided tenant IDs. Subdomains match the product experience and provide host-only cookie isolation; user-provided IDs are insecure as an authority source.
 
 **Consequences:** wildcard DNS/TLS and trusted-proxy configuration are required. Local development needs a documented hostname strategy.
+
+## ADR-003: Two-factor guest login (email + access code)
+
+**Status:** Accepted (supersedes the three-field guest login in ADR-002's flow)
+**Date:** 2026-08-18
+
+**Decision:** Guest login asks for the member email and the event's eight-digit access code only. The event name is no longer a login input; the tenant is identified by the hostname (or, on the root domain, located from the email+code pair via the single-use handoff).
+
+**Context:** Real users found three fields too complicated, and the event name added no meaningful security: it is printed on invitations and easily guessed, while tenant identity already comes from the validated hostname. The email (selective) and the random access code (secret, keyed-slow-hashed) carry all the security weight.
+
+**Consequences:** Login forms are two fields. Root-domain locate matches by email and verifies the code against each candidate album (bounded, email-selective). Failure responses stay generic and rate limits are unchanged. `docs/SECURITY.md` and `CLAUDE.md` invariants updated to match.

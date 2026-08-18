@@ -1,6 +1,6 @@
 # TakeAPik
 
-TakeAPik is a multi-tenant collaborative photo album for private events. Guests join with an event name, email address, and eight-digit access code, then upload camera photos into a shared, full-screen masonry gallery. Event admins manage guests and invitations; a platform super-admin provisions and archives albums.
+TakeAPik is a multi-tenant collaborative photo album for private events. Guests join with their email address and the event's eight-digit access code, then upload camera photos into a shared, full-screen masonry gallery. Event admins manage guests and invitations; a platform super-admin provisions and archives albums.
 
 This repository is an implementation-ready foundation: a runnable glassmorphism web shell, tenant resolution and browser image-resize utilities, a PostgreSQL schema, route contracts, security rules, deployment guidance, and an ordered implementation backlog.
 
