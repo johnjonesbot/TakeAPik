@@ -8,7 +8,8 @@ Each checkbox should become a small reviewed change. A phase is complete only wh
 - [x] Add hostname parsing with reserved-label checks
 - [x] Add browser resize primitive and baseline schema
 - [x] Document architecture, API, security, deployment, and Claude Code rules
-- [ ] Add CI workflow after the repository owner selects the CI provider
+- [x] Add CI workflow after the repository owner selects the CI provider
+      (GitHub Actions: audit, typecheck, unit + integration against Postgres 16, build)
 
 Acceptance: `npm run typecheck`, `npm test`, and `npm run build` pass; root page and health endpoint render.
 
