@@ -23,6 +23,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1113.0",
     "argon2": "^0.45.1",
     "next": "16.3.1",
+    "nodemailer": "^9.0.5",
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

@@ -128,3 +128,29 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 @media (max-width: 1100px) { .gallery-masonry { column-count: 3; } }
 @media (max-width: 780px) { .gallery-masonry { column-count: 2; } }
 @media (max-width: 460px) { .gallery-masonry { column-count: 2; column-gap: 9px; } .gallery-item { margin-bottom: 9px; } .gallery-item img { border-radius: 12px; } }
+
+/* Admin panels */
+.admin-panels { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); max-width: 980px; }
+.admin-panel { background: var(--glass); border: 1px solid var(--line); border-radius: 20px; display: grid; gap: 14px; padding: 22px; }
+.admin-panel h2 { font-size: 20px; letter-spacing: -0.02em; margin: 0; }
+.admin-panel button { background: linear-gradient(135deg, #ff9271, #ff684f); border: 0; border-radius: 11px; color: #210a05; cursor: pointer; font-size: 14px; font-weight: 700; justify-self: start; padding: 10px 16px; }
+.admin-panel button.ghost { background: none; border: 1px solid var(--line); color: var(--muted); }
+.admin-panel button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
+.admin-panel-wide { grid-column: 1 / -1; }
+.panel-note { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0; }
+.panel-head { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.panel-head h2 { margin: 0; }
+.rotated-code { background: rgba(123, 241, 168, 0.08); border: 1px solid rgba(123, 241, 168, 0.35); border-radius: 12px; font-size: 14px; margin: 0; padding: 12px 14px; }
+.rotated-code strong { font-size: 18px; letter-spacing: 0.12em; }
+.friend-list { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.friend-list li { align-items: center; border: 1px solid var(--line); border-radius: 14px; display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+.friend-list li.is-disabled { opacity: 0.5; }
+.friend-identity { display: grid; flex: 1; gap: 2px; min-width: 180px; }
+.friend-identity span { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.friend-meta { display: flex; gap: 6px; }
+.friend-actions { display: flex; gap: 8px; }
+.chip { background: var(--glass); border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 11px; padding: 4px 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.chip-sent, .chip-delivered { border-color: rgba(123, 241, 168, 0.4); color: #9df1bd; }
+.chip-failed { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
+.enrollment-uri { background: rgba(3,1,8,.4); border: 1px solid var(--line); border-radius: 12px; font-family: ui-monospace, monospace; font-size: 12px; overflow-wrap: anywhere; padding: 12px; }
+.mfa-confirm { display: grid; gap: 12px; }

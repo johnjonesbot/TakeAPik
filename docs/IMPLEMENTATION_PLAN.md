@@ -53,12 +53,14 @@ Acceptance: current iOS Safari/Android Chrome upload camera photos; malicious/ov
 
 ## Phase 4 — Event administration and email
 
-- [ ] Event name/timezone and access-code rotation with step-up authentication
-- [ ] Friend create/edit/disable/import with normalized-email uniqueness
-- [ ] Single and send-all invitation workflow with idempotency key
-- [ ] Transactional email templates with canonical tenant links and expiration
-- [ ] Delivery/failure state, bounded retries, and admin resend UX
-- [ ] Cover-photo selection restricted to ready photos in the tenant
+- [x] Event name/timezone and access-code rotation with step-up authentication
+- [x] Friend create/edit/disable/import with normalized-email uniqueness
+- [x] Single and send-all invitation workflow with idempotency key
+- [x] Transactional email templates with canonical tenant links and expiration
+- [x] Delivery/failure state, bounded retries, and admin resend UX
+- [x] Cover-photo selection restricted to ready photos in the tenant
+
+SPF/DKIM/DMARC verification remains an operations task for the production sending domain.
 
 Acceptance: disabled members lose active sessions; send-all never duplicates successful sends on retry; SPF/DKIM/DMARC pass.
 

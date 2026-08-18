@@ -1,4 +1,5 @@
 import { AdminLoginForm } from "@/components/admin-login-form";
+import { EventSettings } from "@/components/admin/event-settings";
 import { TenantNav } from "@/components/tenant-nav";
 import { getAuthorizedPageActor, getPageTenant } from "@/lib/page-context";
 
@@ -40,10 +41,7 @@ export default async function AdminPage() {
       <TenantNav albumName={tenant.context.displayName} surface="admin" />
       <section className="portal-body">
         <h1 className="portal-heading">Event overview</h1>
-        <p className="portal-placeholder">
-          Event settings, access-code rotation, friends, invitations, and export controls are being
-          built phase by phase. Your admin session and this portal&apos;s security are already live.
-        </p>
+        <EventSettings />
       </section>
     </main>
   );
