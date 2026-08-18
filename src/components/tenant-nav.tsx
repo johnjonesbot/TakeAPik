@@ -9,10 +9,8 @@ const FRIEND_LINKS = [
 ] as const;
 
 const ADMIN_LINKS = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/friends", label: "Friends" },
-  { href: "/admin/album", label: "Album" },
-  { href: "/admin/account", label: "Account" }
+  { href: "/", label: "Album" },
+  { href: "/admin", label: "Settings" }
 ] as const;
 
 async function logout(): Promise<void> {

@@ -8,10 +8,8 @@
 | `{slug}.takeapik.com/` | Friend | Infinite album gallery |
 | `{slug}.takeapik.com/upload` | Friend | Camera/file selection, preview, description, publish |
 | `{slug}.takeapik.com/my-uploads` | Friend | Current friend's photos |
-| `{slug}.takeapik.com/admin` | Event admin | Overview and event settings |
-| `{slug}.takeapik.com/admin/friends` | Event admin | Friend list and invitation delivery |
-| `{slug}.takeapik.com/admin/album` | Event admin | Cover photo and export |
-| `{slug}.takeapik.com/admin/account` | Event admin | Password and MFA |
+| `{slug}.takeapik.com/admin` | Event admin | Single settings page: event details, access code, friends & invitations, cover photo, export, password & MFA |
+| `{slug}.takeapik.com/admin/{friends,album,account}` | Event admin | Legacy URLs; permanent redirects to `/admin` |
 | `takeapik.com/super-admin` | Super-admin | Tenant provisioning and archive controls |
 
 ## API conventions
