@@ -93,3 +93,38 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
   .tenant-nav { gap: 10px; }
   .tenant-nav-name { font-size: 14px; }
 }
+
+/* Gallery */
+.portal-body-wide { max-width: 1400px; }
+.gallery-masonry { column-count: 4; column-gap: 14px; }
+.gallery-item { break-inside: avoid; margin: 0 0 14px; }
+.gallery-item img { border: 1px solid var(--line); border-radius: 16px; display: block; height: auto; max-width: 100%; width: 100%; }
+.gallery-item figcaption { color: var(--muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; padding: 8px 4px 0; }
+.gallery-empty, .gallery-status { color: var(--muted); padding: 32px 0; text-align: center; }
+.link-button { background: none; border: none; color: var(--violet); cursor: pointer; padding: 0; text-decoration: underline; }
+.gallery-extras { padding: 8px 4px 0; }
+.extras-actions, .extras-edit { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+.extras-edit input { background: rgba(3,1,8,.33); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; color: white; flex: 1; min-width: 140px; padding: 8px 10px; }
+.upload-flow button, .extras-actions button, .extras-edit button { background: linear-gradient(135deg, #ff9271, #ff684f); border: 0; border-radius: 11px; color: #210a05; cursor: pointer; font-size: 14px; font-weight: 700; padding: 10px 16px; }
+button.ghost { background: none; border: 1px solid var(--line); color: var(--muted); }
+button.ghost:hover { color: var(--ink); }
+button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
+
+/* Upload flow */
+.upload-flow { display: grid; gap: 18px; max-width: 560px; }
+.upload-drop { align-items: center; background: var(--glass); border: 1.5px dashed var(--line); border-radius: 22px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 44px 24px; text-align: center; transition: border-color .2s; }
+.upload-drop:hover { border-color: var(--violet); }
+.upload-drop.is-busy { opacity: .6; }
+.upload-drop input { display: none; }
+.upload-drop span { color: var(--muted); font-size: 13px; max-width: 320px; }
+.upload-preview { display: grid; gap: 14px; }
+.upload-preview img { border: 1px solid var(--line); border-radius: 18px; max-height: 60svh; max-width: 100%; object-fit: contain; }
+.upload-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.button-link { background: linear-gradient(135deg, #ff9271, #ff684f); border-radius: 11px; color: #210a05; font-size: 14px; font-weight: 700; padding: 10px 16px; text-decoration: none; }
+.upload-progress { display: grid; gap: 10px; }
+.upload-bar { background: var(--glass); border: 1px solid var(--line); border-radius: 99px; height: 12px; overflow: hidden; }
+.upload-bar i { background: linear-gradient(90deg, #9d7cff, #ff805d); border-radius: 99px; display: block; height: 100%; transition: width .2s; }
+.upload-done { background: var(--glass); border: 1px solid var(--line); border-radius: 18px; display: grid; gap: 12px; padding: 22px; }
+@media (max-width: 1100px) { .gallery-masonry { column-count: 3; } }
+@media (max-width: 780px) { .gallery-masonry { column-count: 2; } }
+@media (max-width: 460px) { .gallery-masonry { column-count: 2; column-gap: 9px; } .gallery-item { margin-bottom: 9px; } .gallery-item img { border-radius: 12px; } }

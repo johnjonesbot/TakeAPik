@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { TenantNav } from "@/components/tenant-nav";
+import { UploadForm } from "@/components/upload-form";
 import { getAuthorizedPageActor } from "@/lib/page-context";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,7 @@ export default async function UploadPage() {
       <TenantNav albumName={authorized.tenant.context.displayName} surface="friend" />
       <section className="portal-body">
         <h1 className="portal-heading">Add your photos</h1>
-        <p className="portal-placeholder">
-          The camera picker, preview, and upload flow arrive with the next phase of the build.
-        </p>
+        <UploadForm />
       </section>
     </main>
   );

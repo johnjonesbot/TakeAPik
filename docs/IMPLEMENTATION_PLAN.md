@@ -38,14 +38,16 @@ Acceptance: 24-hour expiry is enforced server-side; generic login failures do no
 
 ## Phase 3 — Upload and gallery vertical slice
 
-- [ ] Build mobile camera/file picker, preview, optional description, and progress/error states
-- [ ] Feature-detect HEIC/HEIF and add a reviewed fallback decoder if required
-- [ ] Resize/orient/re-encode to max 1920 px, strip metadata, compute SHA-256
-- [ ] Create short-lived signed upload intent using server-generated tenant-prefixed key
-- [ ] Verify stored object magic bytes/size/dimensions and transition pending → ready
-- [ ] Build cursor-paginated infinite masonry gallery and `My uploads` filter
-- [ ] Implement own-photo edit/soft-delete and admin moderation
-- [ ] Clean up abandoned pending uploads and rejected objects
+- [x] Build mobile camera/file picker, preview, optional description, and progress/error states
+- [x] Feature-detect HEIC/HEIF and add a reviewed fallback decoder if required
+      (decode is attempted natively and failures get actionable guidance; a JS fallback decoder
+      stays deferred until real-device testing shows it is required)
+- [x] Resize/orient/re-encode to max 1920 px, strip metadata, compute SHA-256
+- [x] Create short-lived signed upload intent using server-generated tenant-prefixed key
+- [x] Verify stored object magic bytes/size/dimensions and transition pending → ready
+- [x] Build cursor-paginated infinite masonry gallery and `My uploads` filter
+- [x] Implement own-photo edit/soft-delete and admin moderation
+- [x] Clean up abandoned pending uploads and rejected objects (`npm run cleanup`, cron-ready)
 
 Acceptance: current iOS Safari/Android Chrome upload camera photos; malicious/oversize/mismatched files are rejected; gallery handles at least 1,000 photos without unbounded requests.
 

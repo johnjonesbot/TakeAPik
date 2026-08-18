@@ -2,8 +2,21 @@ import { randomUUID } from "node:crypto";
 import { getPool } from "@/lib/db";
 import { provisionTenant, type ProvisionTenantResult } from "@/services/provisioning";
 
+export type ProvisionedTenant = ProvisionTenantResult;
+
 /** Order respects foreign keys; audit_logs is included because tests assert on it. */
-const TENANT_TABLES = ["audit_logs", "photos", "invitations", "sessions", "memberships", "events", "tenants", "platform_users"];
+const TENANT_TABLES = [
+  "audit_logs",
+  "rate_limit_buckets",
+  "login_handoffs",
+  "photos",
+  "invitations",
+  "sessions",
+  "memberships",
+  "events",
+  "tenants",
+  "platform_users"
+];
 
 export async function truncateAll(): Promise<void> {
   await getPool().query(`TRUNCATE ${TENANT_TABLES.join(", ")} RESTART IDENTITY CASCADE`);

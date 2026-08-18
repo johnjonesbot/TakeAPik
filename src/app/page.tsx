@@ -1,5 +1,6 @@
 import { AccessForm } from "@/components/access-form";
 import { MosaicPreview } from "@/components/mosaic-preview";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { TenantNav } from "@/components/tenant-nav";
 import { getAuthorizedPageActor, getPageTenant } from "@/lib/page-context";
 
@@ -56,12 +57,9 @@ async function TenantAlbum({ albumName }: { albumName: string }) {
   return (
     <main className="portal-shell">
       <TenantNav albumName={albumName} surface="friend" />
-      <section className="portal-body">
+      <section className="portal-body portal-body-wide">
         <h1 className="portal-heading">The album</h1>
-        <p className="portal-placeholder">
-          Photos land here. Uploading and the live gallery arrive with the next phase of the build —
-          your session and access already work.
-        </p>
+        <PhotoGallery />
       </section>
     </main>
   );
