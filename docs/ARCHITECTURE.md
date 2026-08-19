@@ -134,3 +134,21 @@ Only an event admin can request a full export. A background job streams tenant o
 **Security consequence — the cookie is no longer the isolation boundary.** ADR-002 relied on host-only cookies so one album's session could not be sent to another album's origin. With all albums on one origin, that isolation moves entirely into the application: the session row binds an actor to exactly one `tenant_id`; every tenant-owned query is scoped by that id; and album pages additionally verify the session's tenant matches the `:slug` in the path before rendering. A session therefore cannot read or mutate another album's data regardless of the URL. Cross-tenant path access (`session for A` visiting `/a/B`) is treated as unauthenticated for B. The super-admin portal stays on its own host, so its cookie never mixes with album sessions.
 
 **Consequence:** No wildcard DNS/TLS is required — only one `albums` subdomain pointed at the app. The cross-subdomain login handoff from ADR-002 is removed, since login and album pages share one origin. Invitation links are `albums.takeapik.com/a/:slug/invite`.
+
+## ADR-005: Single-origin deployment with defense-in-depth
+
+**Status:** Accepted (supersedes ADR-004's albums subdomain split)
+**Date:** 2026-08-19
+
+**Decision:** The entire product runs on one origin, `takeapik.com`: marketing, guest login, albums at `/a/:slug`, and the super-admin portal at `/super-admin`. There is no albums subdomain.
+
+**Context:** The production host (Hostinger shared hosting) cannot route a second hostname to the Node app or issue a certificate for it, so the `albums.takeapik.com` split of ADR-004 was not serveable there. Keeping everything on the one working origin is the pragmatic choice; the album still lives in the path (`/a/:slug`).
+
+**Security model — the session is the isolation boundary, backed by defense-in-depth.** Because all albums share one origin, isolation cannot rely on the cookie's host. It is enforced in layers:
+- The session row binds an actor to exactly one `tenant_id`; every tenant-owned query is scoped by it, so a session cannot read or mutate another album's rows regardless of the URL.
+- Album pages additionally verify the session's tenant matches the `:slug` before rendering; a mismatch is treated as unauthenticated for that album.
+- Session cookies are `HttpOnly; Secure; SameSite=Lax`, so client script cannot read them and cross-site requests cannot ride them; mutations also require an origin / `Sec-Fetch-Site` check.
+- A strict, per-request nonce **Content-Security-Policy** (`default-src 'self'`, `script-src` nonce + `strict-dynamic`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`) blocks injected scripts from exfiltrating data — the main added risk of a shared origin. HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, COOP, and CORP are set on every response.
+- Photo bytes never touch the app origin: originals live in a **private** object-storage bucket under non-guessable, tenant-prefixed, server-generated keys, and are served only through short-lived signed URLs. `Referrer-Policy: strict-origin-when-cross-origin` keeps those URLs out of referers.
+
+**Consequence:** No wildcard or second-host DNS/TLS is needed. The super-admin portal shares the origin, so its session is separated from album sessions only by role checks (a super-admin session is never treated as an album member). Photo-leak resistance depends on the object-storage bucket being private with signed-URL access — a launch requirement, not optional.

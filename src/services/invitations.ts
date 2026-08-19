@@ -1,5 +1,5 @@
 import { getPool, query, queryOne, withTransaction } from "@/lib/db";
-import { albumsUrl } from "@/lib/hosts";
+import { appUrl } from "@/lib/hosts";
 import { buildInviteEmail } from "@/lib/invite-email";
 import { getMailer } from "@/lib/mailer";
 import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
@@ -60,8 +60,8 @@ interface TargetRow {
 }
 
 function canonicalInviteUrl(slug: string, token: string): string {
-  // Albums subdomain, path-based album (ADR-004): albums.takeapik.com/a/:slug/invite
-  return albumsUrl(`/a/${slug}/invite?token=${token}`);
+  // Single origin, path-based album (ADR-005): takeapik.com/a/:slug/invite
+  return appUrl(`/a/${slug}/invite?token=${token}`);
 }
 
 /**

@@ -174,8 +174,8 @@ describe("event administration", () => {
 
     const url = new URL(mailer.sent[0]!.text.match(/https?:\/\/\S+/)![0]);
     const token = url.searchParams.get("token")!;
-    // Path-based album on the albums subdomain (ADR-004).
-    expect(url.hostname).toBe("albums.takeapik.test");
+    // Path-based album on the single origin (ADR-005).
+    expect(url.hostname).toBe("takeapik.test");
     expect(url.pathname).toBe(`/a/${tenant.tenant.slug}/invite`);
 
     const other = await provisionTestTenant({ ownerDisplayName: "Mary Major" });

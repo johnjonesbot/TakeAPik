@@ -16,8 +16,8 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 
 ## Non-negotiable invariants
 
-- Tenancy is path-derived (ADR-004): the album lives at `albums.takeapik.com/a/:slug`. The slug names an album but never grants access on its own — authorization always compares the session's `tenant_id` (from the session row) against the requested album, and every tenant-owned query is scoped by that `tenant_id`. Never trust a tenant id or slug from the browser as an authority.
-- Album paths (`/a/*`) exist only on the albums subdomain; the super-admin portal only on the main domain. The middleware redirects the wrong-surface requests.
+- Single origin (ADR-005): the whole app runs on `takeapik.com` — marketing, album login, albums at `/a/:slug`, and `/super-admin`. Tenancy is path-derived: the slug names an album but never grants access on its own — authorization always compares the session's `tenant_id` (from the session row) against the requested album, and every tenant-owned query is scoped by that `tenant_id`. Never trust a tenant id or slug from the browser as an authority.
+- Because all albums share one origin, isolation lives in the app, not the cookie host: keep the session→tenant binding authoritative, the strict nonce CSP and the security headers in `proxy.ts`, and `HttpOnly` cookies. Do not weaken the CSP (no `unsafe-inline`/`unsafe-eval` in `script-src`) or serve photo bytes from the app origin.
 - Every tenant-owned database query includes `tenant_id`, even when querying by globally unique ID.
 - Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant comes from the hostname, never from input.
 - Store access codes, invite tokens, session tokens, and passwords only as strong one-way hashes. Never log them.
