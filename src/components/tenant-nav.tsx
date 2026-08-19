@@ -3,9 +3,9 @@
 import { usePathname } from "next/navigation";
 
 const MEMBER_LINKS = [
-  { href: "/", label: "Album" },
-  { href: "/upload", label: "Upload" },
-  { href: "/my-uploads", label: "My uploads" }
+  { path: "", label: "Album" },
+  { path: "/upload", label: "Upload" },
+  { path: "/my-uploads", label: "My uploads" }
 ] as const;
 
 async function logout(): Promise<void> {
@@ -15,17 +15,23 @@ async function logout(): Promise<void> {
 
 interface TenantNavProps {
   albumName: string;
+  /** The album slug; links are built under /a/:slug. */
+  slug: string;
   /**
    * Adds the Settings link. Purely cosmetic: every admin page and API route
-   * re-verifies the session's role server-side, so hiding or forging this
-   * link changes nothing about what a session can actually do.
+   * re-verifies the session's role and tenant server-side, so hiding or
+   * forging this link changes nothing about what a session can actually do.
    */
   isAdmin: boolean;
 }
 
-export function TenantNav({ albumName, isAdmin }: TenantNavProps) {
+export function TenantNav({ albumName, slug, isAdmin }: TenantNavProps) {
   const pathname = usePathname();
-  const links = isAdmin ? [...MEMBER_LINKS, { href: "/admin", label: "Settings" } as const] : MEMBER_LINKS;
+  const base = `/a/${slug}`;
+  const links = [
+    ...MEMBER_LINKS.map((link) => ({ href: `${base}${link.path}`, label: link.label })),
+    ...(isAdmin ? [{ href: `${base}/admin`, label: "Settings" }] : [])
+  ];
 
   return (
     <nav className="tenant-nav" aria-label="Album navigation">

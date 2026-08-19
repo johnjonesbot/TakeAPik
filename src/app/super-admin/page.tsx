@@ -1,26 +1,13 @@
 import { Wordmark } from "@/components/wordmark";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { TenantsManager } from "@/components/super-admin/tenants-manager";
-import { getAuthorizedPageActor, getPageTenant } from "@/lib/page-context";
+import { getSuperAdminPageActor } from "@/lib/page-context";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuperAdminPage() {
-  const tenant = await getPageTenant();
-  if (tenant.kind !== "root") {
-    // The platform portal never appears on tenant hosts.
-    return (
-      <main className="landing-shell tenant-login-shell">
-        <section className="tenant-login">
-          <h1>Not here</h1>
-          <p className="intro">There is nothing at this address.</p>
-        </section>
-      </main>
-    );
-  }
-
-  const authorized = await getAuthorizedPageActor();
-  if (!authorized || authorized.actor.kind !== "super-admin") {
+  const actor = await getSuperAdminPageActor();
+  if (!actor) {
     return (
       <main className="landing-shell tenant-login-shell">
         <header className="brand-bar">

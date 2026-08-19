@@ -7,7 +7,13 @@ interface AdminLoginResponse {
   error?: { message?: string };
 }
 
-export function AdminLoginForm({ title }: { title: string }) {
+interface AdminLoginFormProps {
+  title: string;
+  /** Album slug for an event-admin login; omit for the super-admin portal. */
+  slug?: string;
+}
+
+export function AdminLoginForm({ title, slug }: AdminLoginFormProps) {
   const [message, setMessage] = useState("");
   const [needsMfa, setNeedsMfa] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,6 +33,7 @@ export function AdminLoginForm({ title }: { title: string }) {
         body: JSON.stringify({
           email: formData.get("email"),
           password: formData.get("password"),
+          ...(slug ? { slug } : {}),
           ...(totp ? { totpCode: totp } : {})
         })
       });

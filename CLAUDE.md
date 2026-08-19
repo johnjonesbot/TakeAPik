@@ -16,7 +16,8 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 
 ## Non-negotiable invariants
 
-- Derive tenant context from a normalized, allow-listed hostname; never trust a tenant ID from the browser.
+- Tenancy is path-derived (ADR-004): the album lives at `albums.takeapik.com/a/:slug`. The slug names an album but never grants access on its own — authorization always compares the session's `tenant_id` (from the session row) against the requested album, and every tenant-owned query is scoped by that `tenant_id`. Never trust a tenant id or slug from the browser as an authority.
+- Album paths (`/a/*`) exist only on the albums subdomain; the super-admin portal only on the main domain. The middleware redirects the wrong-surface requests.
 - Every tenant-owned database query includes `tenant_id`, even when querying by globally unique ID.
 - Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant comes from the hostname, never from input.
 - Store access codes, invite tokens, session tokens, and passwords only as strong one-way hashes. Never log them.

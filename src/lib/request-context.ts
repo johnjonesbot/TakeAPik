@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 import { getEnv } from "@/lib/env";
 import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 import { resolveActorFromToken, type Actor } from "@/services/sessions";
-import { lookupTenantByHost, type TenantLookup } from "@/services/tenant-context";
 
 /** Origin check for mutations: same-origin fetch metadata or a matching Origin host. */
 export function isSameOriginRequest(request: NextRequest): boolean {
@@ -32,10 +31,6 @@ export function requestIpHash(request: NextRequest): string | undefined {
   return fingerprintHash(forwarded ?? "direct");
 }
 
-export async function getRequestTenant(request: NextRequest): Promise<TenantLookup> {
-  return lookupTenantByHost(request.headers.get("host") ?? "");
-}
-
 export async function getRequestActor(request: NextRequest): Promise<Actor | null> {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
@@ -43,16 +38,12 @@ export async function getRequestActor(request: NextRequest): Promise<Actor | nul
 }
 
 /**
- * Actor valid for this request's tenant surface: a friend/admin actor must
- * belong to the host-resolved tenant; a super-admin actor is only valid on
- * the root surface.
+ * The signed-in actor from the session cookie, or null. Tenancy is carried by
+ * the session itself (ADR-004): the session row binds an actor to exactly one
+ * tenant, and every tenant-owned query is scoped by that tenant id, so a
+ * session can never reach another album's data regardless of the URL.
  */
-export async function getAuthorizedActor(request: NextRequest): Promise<{ actor: Actor; tenant: TenantLookup } | null> {
-  const [actor, tenant] = await Promise.all([getRequestActor(request), getRequestTenant(request)]);
-  if (!actor) return null;
-  if (actor.kind === "super-admin") {
-    return tenant.kind === "root" ? { actor, tenant } : null;
-  }
-  if (tenant.kind !== "tenant" || tenant.context.tenantId !== actor.tenantId) return null;
-  return { actor, tenant };
+export async function getAuthorizedActor(request: NextRequest): Promise<{ actor: Actor } | null> {
+  const actor = await getRequestActor(request);
+  return actor ? { actor } : null;
 }

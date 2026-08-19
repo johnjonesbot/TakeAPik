@@ -179,3 +179,7 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .wordmark { display: inline-flex; align-items: center; line-height: 0; }
 .wordmark img { display: block; height: 30px; width: auto; }
 @media (max-width: 520px) { .wordmark img { height: 26px; } }
+
+/* Marketing CTA (main domain → albums subdomain) */
+.cta-button { align-items: center; background: linear-gradient(135deg, #ff9271, #ff684f); border-radius: 13px; color: #210a05; display: inline-flex; font-weight: 800; gap: 6px; margin-top: 32px; padding: 15px 26px; text-decoration: none; }
+.cta-button:hover { filter: brightness(1.05); }

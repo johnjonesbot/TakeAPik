@@ -3,7 +3,7 @@ import { closePool, getPool } from "@/lib/db";
 import { findEventByTenant } from "@/lib/repositories/events";
 import { disableMembership, findMembershipById, listMemberships } from "@/lib/repositories/memberships";
 import { archiveTenant } from "@/lib/repositories/tenants";
-import { lookupTenantByHost } from "@/services/tenant-context";
+import { lookupTenantBySlug } from "@/services/tenant-context";
 import { provisionTestTenant, resetHelperState, truncateAll } from "./helpers";
 
 describe("tenant isolation", () => {
@@ -51,20 +51,19 @@ describe("tenant isolation", () => {
     expect(aEvent?.id).not.toBe(b.event.id);
   });
 
-  it("resolves hosts to active tenants and hides archived or unknown ones identically", async () => {
+  it("resolves slugs to active tenants and hides archived, unknown, and invalid ones identically", async () => {
     const a = await provisionTestTenant();
 
-    const active = await lookupTenantByHost(`${a.tenant.slug}.takeapik.test`);
+    const active = await lookupTenantBySlug(a.tenant.slug);
     expect(active.kind).toBe("tenant");
     if (active.kind === "tenant") expect(active.context.tenantId).toBe(a.tenant.id);
 
     await archiveTenant(getPool(), a.tenant.id);
-    const archived = await lookupTenantByHost(`${a.tenant.slug}.takeapik.test`);
-    const missing = await lookupTenantByHost("no-such-album.takeapik.test");
+    const archived = await lookupTenantBySlug(a.tenant.slug);
+    const missing = await lookupTenantBySlug("no-such-album");
+    const invalid = await lookupTenantBySlug("Not A Slug!");
     expect(archived).toEqual({ kind: "unavailable" });
     expect(missing).toEqual({ kind: "unavailable" });
-
-    const root = await lookupTenantByHost("takeapik.test");
-    expect(root).toEqual({ kind: "root" });
+    expect(invalid).toEqual({ kind: "unavailable" });
   });
 });

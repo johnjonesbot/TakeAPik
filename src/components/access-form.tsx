@@ -3,32 +3,20 @@
 import { FormEvent, useState } from "react";
 
 interface AccessFormProps {
-  /** "root" locates the album and follows a handoff; "tenant" signs in directly. */
+  /** "root" locates the album from email+code; "tenant" logs into a known album. */
   surface?: "root" | "tenant";
+  /** Required for the "tenant" surface — the album this form signs into. */
+  slug?: string;
   /** Prefills from an invitation link; the access code is always typed. */
   defaultEmail?: string;
 }
 
 interface FriendLoginResponse {
-  data?: { handoff?: { token: string; action: string } };
+  data?: { slug?: string };
   error?: { message?: string };
 }
 
-/** Cross-subdomain navigation POST that lets the tenant host set its cookie. */
-function submitHandoff(action: string, token: string): void {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = action;
-  const field = document.createElement("input");
-  field.type = "hidden";
-  field.name = "token";
-  field.value = token;
-  form.appendChild(field);
-  document.body.appendChild(form);
-  form.submit();
-}
-
-export function AccessForm({ surface = "root", defaultEmail }: AccessFormProps) {
+export function AccessForm({ surface = "root", slug, defaultEmail }: AccessFormProps) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -45,20 +33,17 @@ export function AccessForm({ surface = "root", defaultEmail }: AccessFormProps) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.get("email"),
-          accessCode: formData.get("code")
+          accessCode: formData.get("code"),
+          ...(surface === "tenant" && slug ? { slug } : {})
         })
       });
       const payload = (await response.json()) as FriendLoginResponse;
-      if (!response.ok) {
+      if (!response.ok || !payload.data?.slug) {
         setMessage(payload.error?.message ?? "Something went wrong; try again");
         return;
       }
-      if (surface === "root" && payload.data?.handoff) {
-        setMessage("Opening your album…");
-        submitHandoff(payload.data.handoff.action, payload.data.handoff.token);
-        return;
-      }
-      window.location.assign("/");
+      setMessage("Opening your album…");
+      window.location.assign(`/a/${payload.data.slug}`);
     } catch {
       setMessage("Network trouble; try again");
     } finally {

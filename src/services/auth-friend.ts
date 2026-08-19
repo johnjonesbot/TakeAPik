@@ -5,7 +5,6 @@ import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
 import { findEventByTenant } from "@/lib/repositories/events";
 import { findActiveMembershipByEmail } from "@/lib/repositories/memberships";
 import { writeAuditEvent } from "@/services/audit";
-import { createLoginHandoff, type HandoffGrant } from "@/services/login-handoff";
 import { issueSession, type IssuedSession } from "@/services/sessions";
 import type { TenantContext } from "@/services/tenant-context";
 
@@ -18,7 +17,7 @@ export interface FriendLoginInput {
 }
 
 export type FriendLoginResult =
-  | { outcome: "success"; session: IssuedSession; membershipId: string }
+  | { outcome: "success"; session: IssuedSession; membershipId: string; slug: string }
   | { outcome: "failure" }
   | { outcome: "rate-limited" };
 
@@ -29,10 +28,10 @@ function dummyCodeHash(): Promise<string> {
 }
 
 /**
- * Friend login (ADR-003): an active member email and the event's eight-digit
- * code must both match the host-resolved tenant. Failures are uniform and
- * code verification always runs, so responses do not reveal which factor was
- * wrong or which emails exist.
+ * Friend login for a known album (ADR-003): an active member email and the
+ * event's eight-digit code must both match the given tenant. Failures are
+ * uniform and code verification always runs, so responses do not reveal which
+ * factor was wrong or which emails exist.
  */
 export async function loginFriend(
   input: FriendLoginInput,
@@ -84,17 +83,18 @@ export async function loginFriend(
     ipHash: input.ipHash
   });
 
-  return { outcome: "success", session, membershipId: membership.id };
+  return { outcome: "success", session, membershipId: membership.id, slug: input.tenant.slug };
 }
 
 export interface LocateFriendLoginInput {
   email: string;
   accessCode: string;
   ipHash?: string;
+  userAgentHash?: string;
 }
 
 export type LocateFriendLoginResult =
-  | { outcome: "success"; handoff: HandoffGrant }
+  | { outcome: "success"; session: IssuedSession; slug: string }
   | { outcome: "failure" }
   | { outcome: "rate-limited" };
 
@@ -103,14 +103,15 @@ interface CandidateRow {
   tenant_slug: string;
   access_code_hash: string;
   membership_id: string;
+  platform_user_id: string | null;
 }
 
 /**
- * Root-domain friend login (ADR-003): email plus access code must match one
- * active tenant; the result is a single-use handoff the browser presents on
- * the tenant subdomain, where the host-only session cookie can be set.
- * Membership email is the selective factor, so the candidate set stays tiny;
- * the random code disambiguates when one email belongs to several albums.
+ * Root-domain friend login (ADR-003): email plus access code identify one
+ * active album, then a session is issued directly (same origin, no handoff)
+ * and the caller redirects to /a/:slug. Membership email is the selective
+ * factor; the random code disambiguates when one email belongs to several
+ * albums.
  */
 export async function locateFriendLogin(
   input: LocateFriendLoginInput,
@@ -128,7 +129,7 @@ export async function locateFriendLogin(
   const candidates = await query<CandidateRow>(
     db,
     `SELECT t.id AS tenant_id, t.slug AS tenant_slug,
-            e.access_code_hash, m.id AS membership_id
+            e.access_code_hash, m.id AS membership_id, m.platform_user_id
      FROM memberships m
      JOIN tenants t ON t.id = m.tenant_id AND t.status = 'active'
      JOIN events e ON e.tenant_id = t.id
@@ -155,15 +156,21 @@ export async function locateFriendLogin(
     return { outcome: "failure" };
   }
 
-  const handoff = await createLoginHandoff(matched.tenant_id, matched.membership_id, matched.tenant_slug);
+  const session = await issueSession(db, {
+    tenantId: matched.tenant_id,
+    membershipId: matched.membership_id,
+    platformUserId: matched.platform_user_id ?? undefined,
+    ipHash: input.ipHash,
+    userAgentHash: input.userAgentHash
+  });
   await writeAuditEvent(db, {
     tenantId: matched.tenant_id,
     actorMembershipId: matched.membership_id,
     action: "auth.friend.login.success",
     targetType: "membership",
     targetId: matched.membership_id,
-    metadata: { surface: "root-handoff" },
+    metadata: { surface: "root" },
     ipHash: input.ipHash
   });
-  return { outcome: "success", handoff };
+  return { outcome: "success", session, slug: matched.tenant_slug };
 }

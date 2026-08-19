@@ -6,8 +6,8 @@ import { createMembership } from "@/lib/repositories/memberships";
 import { issueSession } from "@/services/sessions";
 import { provisionTestTenant, resetHelperState, truncateAll, type ProvisionedTenant } from "./helpers";
 
-function adminRequest(tenantSlug: string, sessionToken: string | null, extraHeaders: Record<string, string> = {}): NextRequest {
-  const host = `${tenantSlug}.takeapik.test`;
+function adminRequest(sessionToken: string | null, extraHeaders: Record<string, string> = {}): NextRequest {
+  const host = "albums.takeapik.test";
   return new NextRequest(`http://${host}/api/v1/admin/event`, {
     headers: {
       host,
@@ -28,11 +28,11 @@ async function friendSession(tenant: ProvisionedTenant): Promise<string> {
 }
 
 /**
- * The Settings tab in the UI is cosmetic; this suite proves the server-side
- * gate is what actually decides. A friend session must never pass the admin
- * gate, no matter what headers or paths the browser sends.
+ * The admin surface is decided entirely by the session (ADR-004): the role and
+ * tenant come from the session row in the database, never from the URL, path,
+ * or any header a browser can set.
  */
-describe("admin gate is server-enforced", () => {
+describe("admin gate is server-enforced by session", () => {
   beforeEach(async () => {
     await truncateAll();
     resetHelperState();
@@ -42,61 +42,52 @@ describe("admin gate is server-enforced", () => {
     await closePool();
   });
 
-  it("accepts a genuine admin session", async () => {
+  it("accepts a genuine admin session and returns its album slug", async () => {
     const tenant = await provisionTestTenant();
     const session = await issueSession(getPool(), {
       tenantId: tenant.tenant.id,
       membershipId: tenant.ownerMembership.id,
       platformUserId: tenant.owner.id
     });
-    const gate = await requireAdminActor(adminRequest(tenant.tenant.slug, session.token), "rid", { mutation: false });
+    const gate = await requireAdminActor(adminRequest(session.token), "rid", { mutation: false });
     expect("actor" in gate && gate.actor.kind).toBe("admin");
+    if ("actor" in gate) expect(gate.tenantSlug).toBe(tenant.tenant.slug);
   });
 
-  it("rejects a friend session outright", async () => {
+  it("rejects a friend session, even with forged admin role headers", async () => {
     const tenant = await provisionTestTenant();
     const token = await friendSession(tenant);
-    const gate = await requireAdminActor(adminRequest(tenant.tenant.slug, token), "rid", { mutation: false });
-    expect("error" in gate).toBe(true);
-  });
+    const plain = await requireAdminActor(adminRequest(token), "rid", { mutation: false });
+    expect("error" in plain).toBe(true);
 
-  it("rejects a friend session even with spoofed tenant/admin headers", async () => {
-    const tenant = await provisionTestTenant();
-    const token = await friendSession(tenant);
-    const gate = await requireAdminActor(
-      adminRequest(tenant.tenant.slug, token, {
-        "x-takeapik-tenant": tenant.tenant.slug,
-        "x-role": "admin",
-        "x-forwarded-user": tenant.owner.email
-      }),
+    const spoofed = await requireAdminActor(
+      adminRequest(token, { "x-role": "admin", "x-takeapik-role": "admin", "x-forwarded-user": tenant.owner.email }),
       "rid",
       { mutation: false }
     );
-    expect("error" in gate).toBe(true);
-  });
-
-  it("rejects an admin session replayed against a different tenant's host", async () => {
-    const a = await provisionTestTenant();
-    const b = await provisionTestTenant({ ownerDisplayName: "Mary Major" });
-    const session = await issueSession(getPool(), {
-      tenantId: a.tenant.id,
-      membershipId: a.ownerMembership.id,
-      platformUserId: a.owner.id
-    });
-    const gate = await requireAdminActor(adminRequest(b.tenant.slug, session.token), "rid", { mutation: false });
-    expect("error" in gate).toBe(true);
+    expect("error" in spoofed).toBe(true);
   });
 
   it("rejects missing and forged session cookies", async () => {
-    const tenant = await provisionTestTenant();
-    const anonymous = await requireAdminActor(adminRequest(tenant.tenant.slug, null), "rid", { mutation: false });
+    const anonymous = await requireAdminActor(adminRequest(null), "rid", { mutation: false });
     expect("error" in anonymous).toBe(true);
-    const forged = await requireAdminActor(
-      adminRequest(tenant.tenant.slug, "a".repeat(43)),
-      "rid",
-      { mutation: false }
-    );
+    const forged = await requireAdminActor(adminRequest("a".repeat(43)), "rid", { mutation: false });
     expect("error" in forged).toBe(true);
+  });
+
+  it("rejects a super-admin session on the album-admin gate", async () => {
+    const superToken = (
+      await issueSession(getPool(), {
+        platformUserId: (
+          await getPool().query<{ id: string }>(
+            "INSERT INTO platform_users (email, password_hash, display_name, is_super_admin) VALUES ($1, 'x', 'Root', true) RETURNING id",
+            [`root-${Date.now()}@example.test`]
+          )
+        ).rows[0]!.id
+      })
+    ).token;
+    const gate = await requireAdminActor(adminRequest(superToken), "rid", { mutation: false });
+    expect("error" in gate).toBe(true);
   });
 
   it("rejects cross-origin admin mutations even from a real admin session", async () => {
@@ -107,7 +98,7 @@ describe("admin gate is server-enforced", () => {
       platformUserId: tenant.owner.id
     });
     const gate = await requireAdminActor(
-      adminRequest(tenant.tenant.slug, session.token, { origin: "https://evil.example", "sec-fetch-site": "cross-site" }),
+      adminRequest(session.token, { origin: "https://evil.example", "sec-fetch-site": "cross-site" }),
       "rid",
       { mutation: true }
     );

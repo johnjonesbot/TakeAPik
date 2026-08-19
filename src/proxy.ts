@@ -1,15 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveTenant } from "@/lib/tenant";
+import { albumsUrl, isAlbumsHost, mainUrl } from "@/lib/hosts";
 
+/**
+ * Surface separation (ADR-004):
+ *   - Album paths (/a/*) exist ONLY on albums.takeapik.com. On the main domain
+ *     they redirect to the albums subdomain, so no album ever appears there.
+ *   - The super-admin portal exists ONLY on the main domain. On the albums
+ *     subdomain it redirects back to the main domain.
+ * API routes and static assets are served on both.
+ */
 export function proxy(request: NextRequest) {
-  const response = NextResponse.next();
-  const result = resolveTenant(
-    request.headers.get("host") ?? "",
-    process.env.ROOT_DOMAIN ?? "localhost:3000",
-    process.env.DEV_TENANT_SLUG
-  );
+  const host = request.headers.get("host") ?? "";
+  const { pathname, search } = request.nextUrl;
 
-  if (result.kind === "tenant") response.headers.set("x-takeapik-tenant", result.slug);
+  let response: NextResponse | undefined;
+  if (isAlbumsHost(host)) {
+    if (pathname === "/super-admin" || pathname.startsWith("/super-admin/")) {
+      response = NextResponse.redirect(mainUrl(pathname + search));
+    }
+  } else {
+    if (pathname === "/a" || pathname.startsWith("/a/")) {
+      response = NextResponse.redirect(albumsUrl(pathname + search));
+    }
+  }
+
+  response = response ?? NextResponse.next();
   response.headers.set("x-content-type-options", "nosniff");
   response.headers.set("referrer-policy", "strict-origin-when-cross-origin");
   response.headers.set("permissions-policy", "camera=(self), geolocation=(), microphone=()");

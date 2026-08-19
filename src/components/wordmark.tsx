@@ -1,8 +1,8 @@
-// Official takeapik wordmark (white letters + red camera mark), served from
-// the web root at /images. Links home. Alt text carries the brand name.
-export function Wordmark() {
+// Official takeapik wordmark (white letters + red camera mark). Links to the
+// marketing home by default, or to the album home when an href is given.
+export function Wordmark({ href = "/" }: { href?: string }) {
   return (
-    <a className="wordmark" href="/" aria-label="TakeAPik home">
+    <a className="wordmark" href={href} aria-label="TakeAPik home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/images/wordmark-white.png" alt="TakeAPik" />
     </a>

@@ -7,7 +7,7 @@ import { setStorageForTesting } from "@/lib/storage";
 import { getExport, requestExport, runAlbumExportJob, deleteExpiredExports } from "@/services/exports";
 import { enqueueJob, runJobsOnce, type JobRow } from "@/services/jobs";
 import { archiveTenantAsSuperAdmin, listTenants, type SuperAdminActor } from "@/services/platform-admin";
-import { lookupTenantByHost } from "@/services/tenant-context";
+import { lookupTenantBySlug } from "@/services/tenant-context";
 import { issueSession, resolveActorFromToken } from "@/services/sessions";
 import type { AdminActor } from "@/services/event-admin";
 import { FakeStorage } from "./fake-storage";
@@ -159,7 +159,7 @@ describe("exports, jobs, and archival", () => {
       tenant.tenant.id
     ]);
     expect(invites.rows.every((row) => row.status === "revoked")).toBe(true);
-    expect(await lookupTenantByHost(`${tenant.tenant.slug}.takeapik.test`)).toEqual({ kind: "unavailable" });
+    expect(await lookupTenantBySlug(tenant.tenant.slug)).toEqual({ kind: "unavailable" });
 
     const summary = (await listTenants()).find((row) => row.id === tenant.tenant.id);
     expect(summary?.status).toBe("archived");

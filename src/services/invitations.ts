@@ -1,5 +1,5 @@
-import { getEnv } from "@/lib/env";
 import { getPool, query, queryOne, withTransaction } from "@/lib/db";
+import { albumsUrl } from "@/lib/hosts";
 import { buildInviteEmail } from "@/lib/invite-email";
 import { getMailer } from "@/lib/mailer";
 import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
@@ -60,9 +60,8 @@ interface TargetRow {
 }
 
 function canonicalInviteUrl(slug: string, token: string): string {
-  const env = getEnv();
-  const scheme = env.APP_URL.startsWith("https") ? "https" : "http";
-  return `${scheme}://${slug}.${env.ROOT_DOMAIN}/invite?token=${token}`;
+  // Albums subdomain, path-based album (ADR-004): albums.takeapik.com/a/:slug/invite
+  return albumsUrl(`/a/${slug}/invite?token=${token}`);
 }
 
 /**

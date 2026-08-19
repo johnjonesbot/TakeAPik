@@ -5,7 +5,7 @@ import type { SuperAdminActor } from "@/services/platform-admin";
 
 export type SuperAdminGate = { actor: SuperAdminActor } | { error: NextResponse };
 
-/** Root-host super-admin gate for /api/v1/super-admin/*. */
+/** Platform super-admin gate for /api/v1/super-admin/*; role comes from the session. */
 export async function requireSuperAdminActor(
   request: NextRequest,
   requestId: string,

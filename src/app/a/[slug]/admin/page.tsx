@@ -1,4 +1,3 @@
-import { Wordmark } from "@/components/wordmark";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { AccountSecurity } from "@/components/admin/account-security";
 import { CoverPicker } from "@/components/admin/cover-picker";
@@ -6,35 +5,37 @@ import { EventSettings } from "@/components/admin/event-settings";
 import { ExportPanel } from "@/components/admin/export-panel";
 import { FriendsManager } from "@/components/admin/friends-manager";
 import { TenantNav } from "@/components/tenant-nav";
-import { getAuthorizedPageActor, getPageTenant } from "@/lib/page-context";
+import { Wordmark } from "@/components/wordmark";
+import { getAlbumTenant, getAuthorizedAlbumActor } from "@/lib/page-context";
 
 export const dynamic = "force-dynamic";
 
-/** The whole admin surface lives on this one settings page. */
-export default async function AdminPage() {
-  const tenant = await getPageTenant();
+/** The whole event-admin surface lives on this one settings page. */
+export default async function AdminPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const tenant = await getAlbumTenant(slug);
   if (tenant.kind !== "tenant") {
     return (
       <main className="landing-shell tenant-login-shell">
         <section className="tenant-login">
-          <h1>Not here</h1>
-          <p className="intro">Event administration lives on your album&apos;s own address.</p>
+          <h1>Album unavailable</h1>
+          <p className="intro">This album doesn&apos;t exist or is no longer accepting visitors.</p>
         </section>
       </main>
     );
   }
 
-  const authorized = await getAuthorizedPageActor();
+  const authorized = await getAuthorizedAlbumActor(slug);
   if (!authorized || authorized.actor.kind !== "admin") {
     return (
       <main className="landing-shell tenant-login-shell">
         <header className="brand-bar">
-          <Wordmark />
+          <Wordmark href={`/a/${slug}`} />
         </header>
         <section className="tenant-login">
           <h1>{tenant.context.displayName}</h1>
           <p className="intro">Sign in with your email and password.</p>
-          <AdminLoginForm title="Event admin sign-in" />
+          <AdminLoginForm title="Event admin sign-in" slug={slug} />
         </section>
       </main>
     );
@@ -42,7 +43,7 @@ export default async function AdminPage() {
 
   return (
     <main className="portal-shell">
-      <TenantNav albumName={tenant.context.displayName} isAdmin />
+      <TenantNav albumName={tenant.context.displayName} slug={slug} isAdmin />
       <section className="portal-body portal-body-wide">
         <h1 className="portal-heading">Settings</h1>
 

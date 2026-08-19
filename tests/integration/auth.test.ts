@@ -8,7 +8,6 @@ import { hashToken } from "@/lib/tokens";
 import type { RateLimiter } from "@/lib/rate-limit";
 import { loginAdmin, changeAdminPassword, startMfaEnrollment, confirmMfaEnrollment } from "@/services/auth-admin";
 import { loginFriend, locateFriendLogin } from "@/services/auth-friend";
-import { consumeLoginHandoff } from "@/services/login-handoff";
 import { issueSession, resolveActorFromToken } from "@/services/sessions";
 import { toTenantContext } from "@/services/tenant-context";
 import { provisionTestTenant, resetHelperState, truncateAll } from "./helpers";
@@ -56,7 +55,7 @@ describe("authentication", () => {
     expect(crossTenant.outcome).toBe("failure");
   });
 
-  it("root-domain locate issues a single-use handoff bound to the right tenant", async () => {
+  it("root locate signs into the matching album directly and returns its slug", async () => {
     const tenant = await provisionTestTenant({ eventName: "Maya & Leo" });
 
     const located = await locateFriendLogin(
@@ -65,14 +64,19 @@ describe("authentication", () => {
     );
     expect(located.outcome).toBe("success");
     if (located.outcome !== "success") return;
-    expect(located.handoff.tenantSlug).toBe(tenant.tenant.slug);
+    expect(located.slug).toBe(tenant.tenant.slug);
 
-    const other = await provisionTestTenant({ ownerDisplayName: "Mary Major" });
-    expect(await consumeLoginHandoff(located.handoff.token, other.tenant.id)).toBeNull();
+    // The issued session belongs to the located album.
+    const actor = await resolveActorFromToken(located.session.token);
+    expect(actor).not.toBeNull();
+    if (actor && actor.kind !== "super-admin") {
+      expect(actor.tenantId).toBe(tenant.tenant.id);
+      expect(actor.membershipId).toBe(tenant.ownerMembership.id);
+    }
 
-    const consumed = await consumeLoginHandoff(located.handoff.token, tenant.tenant.id);
-    expect(consumed?.membershipId).toBe(tenant.ownerMembership.id);
-    expect(await consumeLoginHandoff(located.handoff.token, tenant.tenant.id)).toBeNull();
+    // A wrong code locates nothing.
+    const wrong = await locateFriendLogin({ email: tenant.owner.email, accessCode: "00000001" }, noLimit);
+    expect(wrong.outcome).toBe("failure");
   });
 
   it("sessions resolve to actors, expire server-side, and die when the membership is disabled", async () => {

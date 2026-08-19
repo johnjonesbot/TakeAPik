@@ -121,3 +121,16 @@ Only an event admin can request a full export. A background job streams tenant o
 **Context:** Real users found three fields too complicated, and the event name added no meaningful security: it is printed on invitations and easily guessed, while tenant identity already comes from the validated hostname. The email (selective) and the random access code (secret, keyed-slow-hashed) carry all the security weight.
 
 **Consequences:** Login forms are two fields. Root-domain locate matches by email and verifies the code against each candidate album (bounded, email-selective). Failure responses stay generic and rate limits are unchanged. `docs/SECURITY.md` and `CLAUDE.md` invariants updated to match.
+
+## ADR-004: Path-based tenancy on a single albums subdomain
+
+**Status:** Accepted (supersedes ADR-002's subdomain-per-tenant hostname routing)
+**Date:** 2026-08-19
+
+**Decision:** Every album lives at `albums.takeapik.com/a/:slug`. The main domain (`takeapik.com`) hosts only the marketing landing and the super-admin portal; all guest/admin login and album pages live on the single `albums.takeapik.com` subdomain, with the album identified by the URL path. A Next middleware enforces the split: `/a/*` requested on the main domain redirects to the albums subdomain, and `/super-admin` on the albums subdomain redirects to the main domain.
+
+**Context:** The production host is Hostinger shared hosting, which cannot issue a wildcard TLS certificate or route arbitrary `*.takeapik.com` subdomains to the Node app — so the original subdomain-per-album model (ADR-002) could not serve albums there. A single, static subdomain needs only one certificate and one route, which shared hosting does support, while the path carries the album identity.
+
+**Security consequence — the cookie is no longer the isolation boundary.** ADR-002 relied on host-only cookies so one album's session could not be sent to another album's origin. With all albums on one origin, that isolation moves entirely into the application: the session row binds an actor to exactly one `tenant_id`; every tenant-owned query is scoped by that id; and album pages additionally verify the session's tenant matches the `:slug` in the path before rendering. A session therefore cannot read or mutate another album's data regardless of the URL. Cross-tenant path access (`session for A` visiting `/a/B`) is treated as unauthenticated for B. The super-admin portal stays on its own host, so its cookie never mixes with album sessions.
+
+**Consequence:** No wildcard DNS/TLS is required — only one `albums` subdomain pointed at the app. The cross-subdomain login handoff from ADR-002 is removed, since login and album pages share one origin. Invitation links are `albums.takeapik.com/a/:slug/invite`.
