@@ -26,6 +26,7 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Resize in the browser to at most 1920 px before upload, but independently verify MIME type, dimensions, and byte size server-side.
 - Upload through short-lived signed object-storage URLs. Object keys are generated server-side and tenant-prefixed.
 - Archived albums are read-only and reject login, uploads, invites, and mutations.
+- Retention (ADR-007): the event date is required; uploads only within [event − 7 days, +90 days]; past the window the album is flagged for manual, TOTP-confirmed super-admin purge that keeps the tenant, event row, and owner but permanently removes content and storage objects.
 - Write audit events for login outcomes, member/invite changes, access-code rotation, export, archive, and privileged actions.
 
 ## Coding conventions

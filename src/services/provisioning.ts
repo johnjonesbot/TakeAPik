@@ -19,6 +19,7 @@ export interface ProvisionTenantInput {
   timezone?: string;
   /** Super-admin performing the provisioning, for the audit trail. */
   actorPlatformUserId: string;
+  eventStartsAt?: Date;
 }
 
 export interface ProvisionTenantResult {
@@ -75,7 +76,8 @@ export async function provisionTenant(input: ProvisionTenantInput): Promise<Prov
       name: input.eventName,
       accessCodeHash,
       accessCodeEncrypted,
-      timezone: input.timezone
+      timezone: input.timezone,
+      startsAt: input.eventStartsAt
     });
     const ownerMembership = await createMembership(client, {
       tenantId: tenant.id,

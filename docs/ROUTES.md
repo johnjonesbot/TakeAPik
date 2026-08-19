@@ -54,7 +54,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 |---|---|---|
 | `GET` | `/api/v1/photos?cursor=&limit=30` | Tenant member |
 | `GET` | `/api/v1/photos/mine?cursor=&limit=30` | Tenant member; server uses session membership |
-| `POST` | `/api/v1/uploads` | Tenant member; creates pending record and signed URL |
+| `POST` | `/api/v1/uploads` | Tenant member; creates pending record and signed URL. Rejected outside the retention window (ADR-007) |
 | `POST` | `/api/v1/uploads/{photoId}/complete` | Original uploader in same tenant |
 | `PATCH` | `/api/v1/photos/{photoId}` | Original uploader; description only |
 | `DELETE` | `/api/v1/photos/{photoId}` | Original uploader or tenant admin; soft delete |
@@ -76,7 +76,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| `GET/PATCH` | `/api/v1/admin/event` | Read/update name, timezone; rotate access code separately |
+| `GET/PATCH` | `/api/v1/admin/event` | Read/update name, timezone, and the required event date; includes retention-window state (ADR-007). Rotate access code separately |
 | `POST` | `/api/v1/admin/event/access-code` | Step-up auth; rotates the code. The current code stays visible via `GET /admin/event` (ADR-006) |
 | `GET/POST` | `/api/v1/admin/friends` | List/create memberships |
 | `PATCH/DELETE` | `/api/v1/admin/friends/{id}` | Edit or disable membership |
@@ -93,11 +93,13 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| `GET/POST` | `/api/v1/super-admin/tenants` | List/provision tenant and owner |
+| `GET/POST` | `/api/v1/super-admin/tenants` | List/provision tenant and owner; provisioning requires the event date (ADR-007) |
 | `GET/PATCH` | `/api/v1/super-admin/tenants/{id}` | View/edit platform-controlled fields |
 | `POST` | `/api/v1/super-admin/tenants/{id}/archive` | Confirm + step-up auth + revoke tenant sessions |
 | `POST` | `/api/v1/super-admin/tenants/{id}/owner-password` | Step-up auth; resets the owner's password to a one-time temporary value (returned once), revokes their sessions. Refuses super-admin targets |
 | `PATCH` | `/api/v1/super-admin/account` | Super-admin's own email and/or password; current password required. Password change revokes other sessions |
+| `GET` | `/api/v1/super-admin/accounts` | All admin accounts with album, event, and retention-flag state (ADR-007) |
+| `POST` | `/api/v1/super-admin/tenants/{id}/purge` | Step-up auth; blank-slate album deletion — permanently removes photos (storage included), guests, invitations, exports; keeps tenant, event row, and owner (ADR-007) |
 
 Provisioning generates a candidate slug from lowercase initials. Try `jj`, then atomic unique candidates `jj1a`, `jj1b` … without a check-then-insert race. The database unique constraint is authoritative; retry collisions in a bounded transaction.
 

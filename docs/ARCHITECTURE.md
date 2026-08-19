@@ -162,3 +162,13 @@ Only an event admin can request a full export. A background job streams tenant o
 **Decision:** Keep the keyed slow hash as the only value used for verification, and additionally store the current code sealed with the app secret (`secret-box`, same mechanism as MFA secrets). The admin event-settings endpoint decrypts it only for the authenticated event admin of that tenant. Rotation replaces both values atomically and now requires an explicit confirmation in the UI, since the old code dies immediately. Invite tokens, session tokens, and passwords remain strictly hash-only.
 
 **Consequence:** A database leak alone still does not reveal codes (the sealing key lives in the app environment, not the database), but an attacker holding both the database and the app secrets can decrypt current codes. That risk is accepted for guest-level codes; it does not extend to any credential that grants account access. Events provisioned before this change show no code until their first rotation.
+
+## ADR-007: Event-anchored retention with blank-slate deletion
+
+**Status:** Accepted
+
+**Context:** Albums are event-scoped, not permanent archives. Photos accumulating indefinitely raise storage cost and privacy exposure, and hosts need a clear, predictable lifecycle they can explain to guests.
+
+**Decision:** Every event has a required event date. The photo window opens 7 days before it and lasts 90 days; outside the window upload intents are rejected with actionable messages. Past the window the album is *flagged for takedown* — a red flag in the super-admin Accounts tab — and deletion stays a manual, TOTP-confirmed super-admin action, never automatic. Deletion is a *blank-slate purge*: photo and export objects are removed from storage first, then photos, invitations, exports, and all non-owner memberships; every tenant session is revoked. The tenant, its slug, the event row, and the owner account survive; the event date is cleared, so the admin must set a fresh date (opening a new window) before uploads reopen. Events without a date (legacy or freshly purged) keep uploads closed and fall back to tenant creation + 90 days for the flag, which only shows while content remains. The policy is stated in the admin's event settings and on the guest upload screen.
+
+**Consequence:** Retention is enforceable and reversible in exactly one direction — content is unrecoverable after purge (other than off-platform backups), while accounts and album addresses persist for reuse.

@@ -36,7 +36,13 @@ export async function POST(request: NextRequest) {
     return jsonError("RATE_LIMITED", "Too many uploads at once; wait a moment", { requestId });
   }
   if (result.outcome === "invalid") {
-    return jsonError("UPLOAD_INVALID", "This photo can't be uploaded", {
+    const windowMessages: Record<string, string> = {
+      "event-date-not-set": "Uploads open once the event admin sets the event date",
+      "uploads-not-open": "Uploads open one week before the event — check back closer to the date",
+      "uploads-closed": "This album's 90-day photo window has ended; uploads are closed"
+    };
+    const message = windowMessages[result.reason] ?? "This photo can't be uploaded";
+    return jsonError("UPLOAD_INVALID", message, {
       requestId,
       fields: { file: result.reason }
     });

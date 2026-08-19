@@ -54,6 +54,7 @@ export function TenantsManager() {
         ownerEmail: formData.get("ownerEmail"),
         ownerDisplayName: formData.get("ownerDisplayName"),
         eventName: formData.get("eventName"),
+        eventStartsAt: new Date(`${formData.get("eventStartsAt")}T12:00:00Z`).toISOString(),
         timezone: formData.get("timezone") || undefined
       })
     });
@@ -120,6 +121,10 @@ export function TenantsManager() {
         <div className="field">
           <label htmlFor="p-event">Event name</label>
           <input id="p-event" name="eventName" maxLength={200} placeholder="Maya & Leo" required />
+        </div>
+        <div className="field">
+          <label htmlFor="p-event-date">Event date (required)</label>
+          <input id="p-event-date" name="eventStartsAt" type="date" required />
         </div>
         <div className="field">
           <label htmlFor="p-tz">Timezone (optional)</label>

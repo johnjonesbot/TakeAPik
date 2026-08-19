@@ -3,6 +3,8 @@ import { generateAccessCode, hashAccessCode } from "@/lib/access-code";
 import { verifyPassword } from "@/lib/passwords";
 import { openSecret, sealSecret } from "@/lib/secret-box";
 import { findEventByTenant, rotateAccessCode } from "@/lib/repositories/events";
+import { findTenantById } from "@/lib/repositories/tenants";
+import { computeRetention, type Retention } from "@/lib/retention";
 import { findPlatformUserById } from "@/lib/repositories/platform-users";
 import type { EventRow } from "@/lib/repositories/types";
 import { writeAuditEvent } from "@/services/audit";
@@ -13,6 +15,15 @@ export type AdminActor = Actor & { kind: "admin" };
 export interface EventSettings {
   name: string;
   timezone: string;
+  /** Event date (required by policy); null on legacy or freshly purged albums until the admin sets it. */
+  startsAt: string | null;
+  /** Retention policy state (ADR-007) for showing the window and flag. */
+  retention: {
+    uploadsOpenAt: string | null;
+    flaggedAt: string;
+    uploadState: Retention["uploadState"];
+    flagged: boolean;
+  };
   /** The current guest access code (ADR-006), decrypted only for the event admin; null for rows predating visibility. */
   accessCode: string | null;
   accessCodeLastChangedAt: string;
@@ -28,10 +39,18 @@ function currentAccessCode(event: EventRow): string | null {
   }
 }
 
-function toSettings(event: EventRow): EventSettings {
+function toSettings(event: EventRow, tenantCreatedAt: Date): EventSettings {
+  const retention = computeRetention(event.starts_at, tenantCreatedAt);
   return {
     name: event.name,
     timezone: event.timezone,
+    startsAt: event.starts_at ? event.starts_at.toISOString() : null,
+    retention: {
+      uploadsOpenAt: retention.uploadsOpenAt ? retention.uploadsOpenAt.toISOString() : null,
+      flaggedAt: retention.flaggedAt.toISOString(),
+      uploadState: retention.uploadState,
+      flagged: retention.flagged
+    },
     accessCode: currentAccessCode(event),
     accessCodeLastChangedAt: event.access_code_last_changed_at.toISOString(),
     coverPhotoId: event.cover_photo_id
@@ -39,13 +58,16 @@ function toSettings(event: EventRow): EventSettings {
 }
 
 export async function getEventSettings(actor: AdminActor): Promise<EventSettings | null> {
-  const event = await findEventByTenant(getPool(), actor.tenantId);
-  return event ? toSettings(event) : null;
+  const [event, tenant] = await Promise.all([
+    findEventByTenant(getPool(), actor.tenantId),
+    findTenantById(getPool(), actor.tenantId)
+  ]);
+  return event && tenant ? toSettings(event, tenant.created_at) : null;
 }
 
 export async function updateEventSettings(
   actor: AdminActor,
-  changes: { name?: string; timezone?: string }
+  changes: { name?: string; timezone?: string; startsAt?: Date }
 ): Promise<EventSettings | null> {
   return withTransaction(async (client) => {
     const event = await queryOne<EventRow>(
@@ -53,10 +75,11 @@ export async function updateEventSettings(
       `UPDATE events SET
          name = COALESCE($2, name),
          timezone = COALESCE($3, timezone),
+         starts_at = COALESCE($4, starts_at),
          updated_at = now()
        WHERE tenant_id = $1
        RETURNING *`,
-      [actor.tenantId, changes.name ?? null, changes.timezone ?? null]
+      [actor.tenantId, changes.name ?? null, changes.timezone ?? null, changes.startsAt ?? null]
     );
     if (!event) return null;
     await writeAuditEvent(client, {
@@ -68,7 +91,8 @@ export async function updateEventSettings(
       targetId: event.id,
       metadata: { change: "event-settings", fields: Object.keys(changes) }
     });
-    return toSettings(event);
+    const tenant = await findTenantById(client, actor.tenantId);
+    return tenant ? toSettings(event, tenant.created_at) : null;
   });
 }
 

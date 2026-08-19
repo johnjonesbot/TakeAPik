@@ -7,9 +7,10 @@ import { getEventSettings, updateEventSettings } from "@/services/event-admin";
 const patchSchema = z
   .object({
     name: z.string().min(1).max(200).optional(),
-    timezone: z.string().min(1).max(64).optional()
+    timezone: z.string().min(1).max(64).optional(),
+    startsAt: z.iso.datetime().optional()
   })
-  .refine((value) => value.name !== undefined || value.timezone !== undefined, {
+  .refine((value) => value.name !== undefined || value.timezone !== undefined || value.startsAt !== undefined, {
     message: "Nothing to update"
   });
 
@@ -31,7 +32,11 @@ export async function PATCH(request: NextRequest) {
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonValidationError(parsed.error, requestId);
 
-  const settings = await updateEventSettings(gate.actor, parsed.data);
+  const settings = await updateEventSettings(gate.actor, {
+    name: parsed.data.name,
+    timezone: parsed.data.timezone,
+    startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : undefined
+  });
   if (!settings) return jsonError("NOT_FOUND", "Event not found", { requestId });
   return jsonSuccess(settings, requestId);
 }

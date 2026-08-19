@@ -5,8 +5,19 @@ import { FormEvent, useEffect, useState } from "react";
 interface Settings {
   name: string;
   timezone: string;
+  startsAt: string | null;
+  retention: {
+    uploadsOpenAt: string | null;
+    flaggedAt: string;
+    uploadState: "no-date" | "not-open" | "open" | "closed";
+    flagged: boolean;
+  };
   accessCode: string | null;
   accessCodeLastChangedAt: string;
+}
+
+function toDateInputValue(iso: string | null): string {
+  return iso ? new Date(iso).toISOString().slice(0, 10) : "";
 }
 
 interface Envelope<T> {
@@ -32,10 +43,15 @@ export function EventSettings() {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const startsAt = formData.get("startsAt");
     const response = await fetch("/api/v1/admin/event", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: formData.get("name"), timezone: formData.get("timezone") })
+      body: JSON.stringify({
+        name: formData.get("name"),
+        timezone: formData.get("timezone"),
+        startsAt: startsAt ? new Date(`${startsAt}T12:00:00Z`).toISOString() : undefined
+      })
     });
     const payload = (await response.json()) as Envelope<Settings>;
     if (response.ok && payload.data) {
@@ -89,12 +105,32 @@ export function EventSettings() {
           <label htmlFor="event-tz">Timezone</label>
           <input id="event-tz" name="timezone" defaultValue={settings.timezone} maxLength={64} required />
         </div>
+        <div className="field">
+          <label htmlFor="event-date">Event date (required)</label>
+          <input id="event-date" name="startsAt" type="date" defaultValue={toDateInputValue(settings.startsAt)} required />
+        </div>
+        <p className="panel-note">
+          <strong>Photo window policy:</strong> guests can upload from one week before the event date, and the
+          album stays live for 90 days after that. Past the window the album is flagged for takedown and its
+          photos will be permanently deleted — export anything you want to keep before then.
+          {settings.retention.uploadState === "no-date"
+            ? " Uploads stay closed until you set the event date."
+            : settings.retention.uploadState === "not-open"
+              ? ` Uploads open ${new Date(settings.retention.uploadsOpenAt!).toLocaleDateString()}.`
+              : settings.retention.uploadState === "closed"
+                ? " This album's window has ended."
+                : ` This album's window closes ${new Date(settings.retention.flaggedAt).toLocaleDateString()}.`}
+        </p>
         <button type="submit">Save changes</button>
         <p className="form-status" aria-live="polite">{message}</p>
       </form>
 
       <div className="admin-panel">
         <h2>Access code</h2>
+        <p className="panel-note">
+          <strong>This is the code you share with your guests</strong> — they use it with their email to open
+          the album. Never share your own password; that&apos;s only for signing in here.
+        </p>
         {settings.accessCode ? (
           <p className="rotated-code" role="status">
             Current code: <strong>{settings.accessCode}</strong> — share it with any guest, any time.

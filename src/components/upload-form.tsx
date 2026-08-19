@@ -68,6 +68,7 @@ export function UploadForm() {
           />
           <strong>{stage.step === "preparing" ? "Preparing…" : "Take or choose a photo"}</strong>
           <span>It's resized on your phone before it leaves — location data never uploads.</span>
+          <span>Uploads open a week before the event and the album stays live for 90 days after that.</span>
         </label>
       ) : null}
 

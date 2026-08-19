@@ -179,6 +179,14 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .friend-meta { display: flex; gap: 6px; }
 .friend-actions { display: flex; gap: 8px; }
 .chip { background: var(--glass); border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 11px; padding: 4px 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.chip-flagged { border-color: rgba(255, 116, 116, 0.5); color: #ff9d9d; margin-left: 8px; }
+
+/* Accounts accordion (super-admin) */
+.account-row { align-items: center; background: none; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 10px; justify-content: space-between; min-width: 0; padding: 0; text-align: left; }
+.account-details { border-top: 1px solid var(--line); display: grid; gap: 12px; justify-items: start; margin-top: 12px; padding-top: 12px; width: 100%; }
+.account-details dl { display: grid; gap: 8px; margin: 0; }
+.account-details dt { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.account-details dd { margin: 2px 0 0; overflow-wrap: anywhere; }
 .chip-sent, .chip-delivered { border-color: rgba(123, 241, 168, 0.4); color: #9df1bd; }
 .chip-failed { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .enrollment-uri { background: rgba(3,1,8,.4); border: 1px solid var(--line); border-radius: 12px; font-family: ui-monospace, monospace; font-size: 12px; overflow-wrap: anywhere; padding: 12px; }

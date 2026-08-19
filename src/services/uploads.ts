@@ -12,6 +12,9 @@ import {
 } from "@/lib/repositories/photos";
 import { getStorage } from "@/lib/storage";
 import { writeAuditEvent } from "@/services/audit";
+import { findEventByTenant } from "@/lib/repositories/events";
+import { findTenantById } from "@/lib/repositories/tenants";
+import { computeRetention } from "@/lib/retention";
 
 const PUT_URL_TTL_SECONDS = 5 * 60;
 
@@ -52,6 +55,18 @@ export async function createUploadIntent(
   if (input.width < 1 || input.width > env.MAX_IMAGE_WIDTH) return { outcome: "invalid", reason: "too-wide" };
   if (input.height < 1 || input.height > 8_192) return { outcome: "invalid", reason: "bad-dimensions" };
   if (!/^[0-9a-f]{64}$/.test(input.checksumSha256)) return { outcome: "invalid", reason: "bad-checksum" };
+
+  // Retention window (ADR-007): uploads only between event date − 7 days and
+  // the takedown flag 90 days later; closed until the admin sets a date.
+  const [event, tenant] = await Promise.all([
+    findEventByTenant(getPool(), input.tenantId),
+    findTenantById(getPool(), input.tenantId)
+  ]);
+  if (!event || !tenant) return { outcome: "invalid", reason: "uploads-closed" };
+  const retention = computeRetention(event.starts_at, tenant.created_at);
+  if (retention.uploadState === "no-date") return { outcome: "invalid", reason: "event-date-not-set" };
+  if (retention.uploadState === "not-open") return { outcome: "invalid", reason: "uploads-not-open" };
+  if (retention.uploadState === "closed") return { outcome: "invalid", reason: "uploads-closed" };
 
   const quota = await limiter.consume(`upload-intent:${input.tenantId}:${input.membershipId}`, 30, 10 * 60);
   if (!quota.allowed) return { outcome: "rate-limited" };

@@ -35,6 +35,8 @@ export async function provisionTestTenant(overrides: Partial<Parameters<typeof p
     ownerDisplayName: "John Jones",
     ownerPasswordHash: PLACEHOLDER_PASSWORD_HASH,
     eventName: "Test Event",
+    // Inside the upload window (ADR-007) so tests exercise features freely.
+    eventStartsAt: new Date(Date.now() + 2 * 86_400_000),
     actorPlatformUserId: await ensureSuperAdmin(),
     ...overrides
   });

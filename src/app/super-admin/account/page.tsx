@@ -19,6 +19,7 @@ export default async function SuperAdminAccountPage() {
         <span className="tenant-nav-name">Platform</span>
         <div className="tenant-nav-links">
           <a href="/super-admin">Tenants</a>
+          <a href="/super-admin/accounts">Accounts</a>
           <a href="/super-admin/account" aria-current="page">Account</a>
         </div>
       </nav>
