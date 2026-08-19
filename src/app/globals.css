@@ -169,3 +169,8 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .settings-section:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
 .settings-heading { font-size: 24px; letter-spacing: -0.03em; margin: 0 0 18px; }
 .settings-section-narrow { max-width: 480px; }
+
+/* Landing mosaic — real event photos fill each tile */
+.mosaic .tile > img { inset: 0; height: 100%; object-fit: cover; position: absolute; width: 100%; z-index: 0; }
+.mosaic .tile::before { background: linear-gradient(to top, rgba(6, 3, 12, 0.55), rgba(6, 3, 12, 0) 55%); z-index: 1; }
+.mosaic .tile > span { align-self: flex-end; position: relative; z-index: 2; }
