@@ -2,20 +2,20 @@
 
 ## Recommended topology
 
-- Hostinger VPS or a plan that supports a persistent Node.js 22 process, custom reverse-proxy rules, cron/systemd, and wildcard TLS.
-- `takeapik.com` and `*.takeapik.com` point to the application IP.
+- Hostinger VPS or a plan that supports a persistent Node.js 22 process, custom reverse-proxy rules, cron/systemd, and TLS for the single origin (ADR-005: no wildcard or second hostname is needed).
+- `takeapik.com` points to the application IP. Optionally add `www.takeapik.com` as a redirect to the canonical origin.
 - Nginx terminates TLS and proxies to the Next.js standalone server on loopback.
 - Managed/external PostgreSQL is preferred; if PostgreSQL runs on the VPS, bind it to localhost/private networking and maintain encrypted off-site backups.
 - S3-compatible external object storage holds all media and exports.
 
-Hostinger plan capabilities change. Confirm wildcard DNS/TLS, Node versions, process management, database availability, backup scope, and outbound SMTP with the current control panel before purchase or launch.
+Hostinger plan capabilities change. Confirm DNS/TLS management, Node versions, process management, database availability, backup scope, and outbound SMTP with the current control panel before purchase or launch.
 
 ## DNS and TLS
 
 1. Add `A takeapik.com → SERVER_IP`.
-2. Add `A *.takeapik.com → SERVER_IP`.
-3. Issue a certificate covering both `takeapik.com` and `*.takeapik.com` (DNS challenge is typically required for wildcard certificates).
-4. Only enable HSTS after both names serve valid HTTPS and renewal has been tested.
+2. Optionally add `A www.takeapik.com → SERVER_IP` (or a CNAME) and 301-redirect it to `takeapik.com` at the proxy.
+3. Issue a certificate for `takeapik.com` (plus `www` if used). An HTTP-01 challenge is sufficient — no wildcard certificate or DNS challenge is required (ADR-005).
+4. Only enable HSTS after the canonical origin serves valid HTTPS and renewal has been tested. Note the app already sends `Strict-Transport-Security` with `includeSubDomains; preload`, so any other name under the domain must also serve valid HTTPS before browsers that saw the header will load it.
 
 ## Build and release
 
@@ -67,7 +67,7 @@ Use systemd or the hosting platform's process manager. Do not rely on a terminal
 1. Pull request: typecheck, unit/integration tests, build, dependency audit, secret scan.
 2. Main branch: build one artifact and record commit SHA/checksum.
 3. Production approval: backup, migrate, deploy, smoke test.
-4. Smoke tests: root page, tenant host, rejected foreign host, health, guest login, upload intent/complete, admin login.
+4. Smoke tests: root page, an album page at `/a/:slug`, rejected foreign `Host` header, health, guest login, upload intent/complete, admin login.
 5. Roll back application release if smoke tests fail. Roll back schema only with a tested explicit migration; never improvise destructive reversal.
 
 ## Observability
@@ -75,12 +75,12 @@ Use systemd or the hosting platform's process manager. Do not rely on a terminal
 - Structured JSON logs with request ID, actor type/ID, tenant ID, route, duration, status; no PII/secrets.
 - Error tracking with source-map access restricted to the service.
 - Alerts for availability, 5xx rate, login abuse, job backlog, failed invites, storage/database usage, backup failure, and certificate expiry.
-- Synthetic checks for root and a non-sensitive tenant hostname.
+- Synthetic checks for the root page and a non-sensitive album path (`/a/:slug`).
 
 ## Launch checklist
 
 - [ ] Production env validation rejects defaults
-- [ ] Wildcard DNS/TLS and renewal tested
+- [ ] DNS/TLS for the single origin and certificate renewal tested
 - [ ] Database connection uses TLS and least privilege
 - [ ] Bucket is private; public listing/access blocked
 - [ ] SMTP SPF, DKIM, and DMARC configured

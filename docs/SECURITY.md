@@ -8,11 +8,11 @@ Private photographs, guest emails, admin credentials, access codes, session/invi
 
 ### Tenant isolation
 
-- Accept only configured root/wildcard hosts; configure the reverse proxy to replace—not append—forwarded host values.
-- Load the tenant from the server-side slug lookup. Ignore any client tenant ID for authorization.
+- Accept only the configured canonical host (single origin, ADR-005); configure the reverse proxy to replace—not append—forwarded host values.
+- Load the tenant from the server-side slug lookup. Ignore any client tenant ID for authorization. The slug names an album but never grants access: album pages and routes verify the session's `tenant_id` matches the requested album before rendering or mutating.
 - Use repository signatures that require `tenantId`; select/update/delete with `WHERE tenant_id = ? AND id = ?`.
 - Test every protected operation with a resource ID belonging to a different tenant.
-- Never set guest cookies for `.takeapik.com`; use host-only cookies so one album session is not sent to another.
+- Set session cookies host-only (no `domain` attribute). Because all albums share one origin (ADR-005), the cookie host cannot isolate albums — the session→tenant binding above is the isolation boundary, and the cookie's job is `HttpOnly; Secure; SameSite=Lax`.
 
 ### Credentials and sessions
 
@@ -22,11 +22,11 @@ Private photographs, guest emails, admin credentials, access codes, session/invi
 - Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`, host-only.
 - Rotate/revoke sessions on privilege changes, password change, membership disable, access-code rotation (policy choice), and archive.
 - Use generic login failures and constant-behavior comparisons to limit account/event enumeration.
-- Guest login is member email + eight-digit access code (ADR-003); both must match the host-resolved tenant, and the code is verified with a keyed slow hash even when the email is unknown.
+- Guest login is member email + eight-digit access code (ADR-003); both must match the tenant resolved from the album slug (or located server-side from email + code at the marketing root — ADR-005), and the code is verified with a keyed slow hash even when the email is unknown.
 
 ### Web protections
 
-- Require HTTPS and HSTS after all subdomains have valid TLS.
+- Require HTTPS; enable HSTS once the canonical origin serves valid TLS (single origin, ADR-005 — the app sends `includeSubDomains; preload`, so don't point other names at unencrypted services).
 - Use CSP with nonces/hashes, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`.
 - Validate `Origin`/`Sec-Fetch-Site` and use CSRF tokens for authenticated mutations.
 - Encode descriptions as text; never render user HTML. Apply length limits at API and DB layers.

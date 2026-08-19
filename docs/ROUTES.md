@@ -2,15 +2,17 @@
 
 ## Surfaces
 
-| Host/path | Audience | Purpose |
+All paths live on the single `takeapik.com` origin (ADR-005).
+
+| Path | Audience | Purpose |
 |---|---|---|
-| `takeapik.com/` | Friend | Event access form |
-| `{slug}.takeapik.com/` | Friend | Infinite album gallery |
-| `{slug}.takeapik.com/upload` | Friend | Camera/file selection, preview, description, publish |
-| `{slug}.takeapik.com/my-uploads` | Friend | Current friend's photos |
-| `{slug}.takeapik.com/admin` | Event admin | Single settings page: event details, access code, friends & invitations, cover photo, export, password & MFA |
-| `{slug}.takeapik.com/admin/{friends,album,account}` | Event admin | Legacy URLs; permanent redirects to `/admin` |
-| `takeapik.com/super-admin` | Super-admin | Tenant provisioning and archive controls |
+| `/` | Friend | Marketing root and event access form (email + code locates the album) |
+| `/a/{slug}` | Friend | Infinite album gallery |
+| `/a/{slug}/upload` | Friend | Camera/file selection, preview, description, publish |
+| `/a/{slug}/my-uploads` | Friend | Current friend's photos |
+| `/a/{slug}/invite` | Friend | Invitation landing; prefills email from the token, still requires the access code |
+| `/a/{slug}/admin` | Event admin | Single settings page: event details, access code, friends & invitations, cover photo, export, password & MFA |
+| `/super-admin` | Super-admin | Tenant provisioning and archive controls |
 
 ## API conventions
 
@@ -33,14 +35,13 @@ Failure:
 
 Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `RATE_LIMITED`, `ARCHIVED`, `UPLOAD_INVALID`, `INTERNAL_ERROR`. Resource lookups should generally return `404` rather than reveal cross-tenant existence.
 
-## Planned endpoints
+## Endpoints
 
 ### Public and session
 
 | Method | Endpoint | Notes |
 |---|---|---|
-| `POST` | `/api/v1/auth/friend` | Email + 8-digit access code (ADR-003); rate-limited. On the root host it returns a single-use 60-second handoff instead of a cookie |
-| `POST` | `/api/v1/auth/friend/handoff` | Tenant host only. Consumes a root-login handoff token (cross-subdomain form POST) and sets the host-only session cookie |
+| `POST` | `/api/v1/auth/friend` | Email + 8-digit access code (ADR-003); rate-limited. With a `slug` (login from `/a/{slug}`) the tenant is resolved server-side from it; without one (marketing root) the tenant is located from email + code (ADR-005). Sets the host-only session cookie directly — same origin, no handoff |
 | `POST` | `/api/v1/auth/admin` | Admin email/password and optional MFA challenge |
 | `POST` | `/api/v1/auth/logout` | Revokes current session and clears cookie |
 | `GET` | `/api/v1/session` | Minimal actor and tenant context |
@@ -79,7 +80,10 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 | `POST` | `/api/v1/admin/event/access-code` | Step-up auth; returns new code once, never afterward |
 | `GET/POST` | `/api/v1/admin/friends` | List/create memberships |
 | `PATCH/DELETE` | `/api/v1/admin/friends/{id}` | Edit or disable membership |
+| `GET` | `/api/v1/admin/invitations` | List invitations and delivery state |
 | `POST` | `/api/v1/admin/invitations/send` | Send selected IDs or all unsent; idempotency key required |
+| `POST` | `/api/v1/admin/invitations/{id}/resend` | Resend one failed/expired invitation |
+| `POST` | `/api/v1/admin/mfa` | MFA enrollment/challenge management |
 | `PUT` | `/api/v1/admin/cover` | Select a ready tenant photo |
 | `POST` | `/api/v1/admin/exports` | Queue full ZIP; one active export per tenant |
 | `GET` | `/api/v1/admin/exports/{id}` | Poll status; completed response has expiring URL |

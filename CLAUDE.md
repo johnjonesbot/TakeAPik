@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build TakeAPik as a secure, mobile-first, multi-tenant event photo album. The root domain handles guest access. Tenant subdomains host albums and `/admin`; the root `/super-admin` surface is platform-only.
+Build TakeAPik as a secure, mobile-first, multi-tenant event photo album. Everything runs on the single `takeapik.com` origin (ADR-005): marketing and guest access at the root, albums and their admin at `/a/:slug`, and the platform-only `/super-admin` surface.
 
 ## Read before changing code
 
@@ -19,7 +19,7 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Single origin (ADR-005): the whole app runs on `takeapik.com` — marketing, album login, albums at `/a/:slug`, and `/super-admin`. Tenancy is path-derived: the slug names an album but never grants access on its own — authorization always compares the session's `tenant_id` (from the session row) against the requested album, and every tenant-owned query is scoped by that `tenant_id`. Never trust a tenant id or slug from the browser as an authority.
 - Because all albums share one origin, isolation lives in the app, not the cookie host: keep the session→tenant binding authoritative, the strict nonce CSP and the security headers in `proxy.ts`, and `HttpOnly` cookies. Do not weaken the CSP (no `unsafe-inline`/`unsafe-eval` in `script-src`) or serve photo bytes from the app origin.
 - Every tenant-owned database query includes `tenant_id`, even when querying by globally unique ID.
-- Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant comes from the hostname, never from input.
+- Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant is resolved server-side from the album slug (or located from email + code at the marketing root), and a client-supplied tenant id is never an authority (ADR-005).
 - Store access codes, invite tokens, session tokens, and passwords only as strong one-way hashes. Never log them.
 - Guest sessions expire after 24 hours and use `HttpOnly`, `Secure`, `SameSite=Lax`, host-only cookies.
 - Friends can read the album and manage only their own uploads. Event admins can manage only their tenant. Only super-admins provision/archive tenants; only event admins can request full-album exports.

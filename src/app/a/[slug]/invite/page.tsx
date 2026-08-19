@@ -6,7 +6,7 @@ import { acceptInvitation } from "@/services/invitations";
 export const dynamic = "force-dynamic";
 
 /**
- * Invitation landing (albums subdomain). The link identifies the event and
+ * Invitation landing (/a/{slug}/invite). The link identifies the event and
  * membership and prefills the email; the eight-digit access code still has to
  * come from the host, so a leaked link alone cannot open the album.
  */
