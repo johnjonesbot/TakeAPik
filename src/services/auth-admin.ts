@@ -178,3 +178,45 @@ export async function changeAdminPassword(input: ChangePasswordInput): Promise<C
     return "success";
   });
 }
+
+export interface ChangeEmailInput {
+  platformUserId: string;
+  currentPassword: string;
+  newEmail: string;
+}
+
+export type ChangeEmailResult = "success" | "invalid-current" | "email-taken" | "invalid-email";
+
+/**
+ * Verify the current password, then move the account to the new normalized
+ * email. Uniqueness is platform-wide (platform_users.email is unique).
+ * Sessions stay valid — the credential that changed is the identifier, not
+ * the secret.
+ */
+export async function changeAccountEmail(input: ChangeEmailInput): Promise<ChangeEmailResult> {
+  const newEmail = normalizeEmail(input.newEmail);
+  if (!newEmail || !newEmail.includes("@")) return "invalid-email";
+  return withTransaction(async (client) => {
+    const user = await findPlatformUserById(client, input.platformUserId);
+    if (!user || user.disabled_at) return "invalid-current";
+    if (!(await verifyPassword(user.password_hash, input.currentPassword))) return "invalid-current";
+    if (newEmail === normalizeEmail(user.email)) return "success";
+
+    const existing = await findPlatformUserByEmail(client, newEmail);
+    if (existing && existing.id !== user.id) return "email-taken";
+
+    await queryOne(
+      client,
+      "UPDATE platform_users SET email = $2, updated_at = now() WHERE id = $1 RETURNING id",
+      [user.id, newEmail]
+    );
+    await writeAuditEvent(client, {
+      actorPlatformUserId: user.id,
+      action: "member.update",
+      targetType: "platform_user",
+      targetId: user.id,
+      metadata: { change: "email" }
+    });
+    return "success";
+  });
+}

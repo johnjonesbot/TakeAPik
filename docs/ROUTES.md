@@ -97,6 +97,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 | `GET/PATCH` | `/api/v1/super-admin/tenants/{id}` | View/edit platform-controlled fields |
 | `POST` | `/api/v1/super-admin/tenants/{id}/archive` | Confirm + step-up auth + revoke tenant sessions |
 | `POST` | `/api/v1/super-admin/tenants/{id}/owner-password` | Step-up auth; resets the owner's password to a one-time temporary value (returned once), revokes their sessions. Refuses super-admin targets |
+| `PATCH` | `/api/v1/super-admin/account` | Super-admin's own email and/or password; current password required. Password change revokes other sessions |
 
 Provisioning generates a candidate slug from lowercase initials. Try `jj`, then atomic unique candidates `jj1a`, `jj1b` … without a check-then-insert race. The database unique constraint is authoritative; retry collisions in a bounded transaction.
 
