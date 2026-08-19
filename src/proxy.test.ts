@@ -2,21 +2,30 @@ import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "./proxy";
 
-function requestWith(proto?: string): NextRequest {
+function requestFor(opts: { proto?: string; host?: string } = {}): NextRequest {
   const headers = new Headers();
-  if (proto) headers.set("x-forwarded-proto", proto);
-  return new NextRequest("https://takeapik.com/a/jj?x=1", { headers });
+  if (opts.proto) headers.set("x-forwarded-proto", opts.proto);
+  if (opts.host) headers.set("host", opts.host);
+  // The internal URL a standalone server actually sees; the public host must
+  // never be derived from it.
+  return new NextRequest("http://0.0.0.0:3000/a/jj?x=1", { headers });
 }
 
 describe("proxy", () => {
-  it("redirects forwarded plain-HTTP requests to https with 308", () => {
-    const response = proxy(requestWith("http"));
+  it("redirects forwarded plain-HTTP requests to https on the public host", () => {
+    const response = proxy(requestFor({ proto: "http", host: "takeapik.com" }));
     expect(response.status).toBe(308);
     expect(response.headers.get("location")).toBe("https://takeapik.com/a/jj?x=1");
   });
 
-  it("serves forwarded https requests with the strict nonce CSP", () => {
-    const response = proxy(requestWith("https"));
+  it("redirects www to the apex origin", () => {
+    const response = proxy(requestFor({ proto: "https", host: "www.takeapik.com" }));
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe("https://takeapik.com/a/jj?x=1");
+  });
+
+  it("serves forwarded https apex requests with the strict nonce CSP", () => {
+    const response = proxy(requestFor({ proto: "https", host: "takeapik.com" }));
     expect(response.status).toBe(200);
     const csp = response.headers.get("content-security-policy") ?? "";
     expect(csp).toContain("script-src 'self' 'nonce-");
@@ -28,7 +37,7 @@ describe("proxy", () => {
   });
 
   it("does not redirect local requests that have no forwarded proto", () => {
-    const response = proxy(requestWith(undefined));
+    const response = proxy(requestFor({ host: "localhost:3000" }));
     expect(response.status).toBe(200);
   });
 });

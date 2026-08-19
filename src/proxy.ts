@@ -29,14 +29,20 @@ function buildCsp(nonce: string): string {
 }
 
 export function proxy(request: NextRequest) {
-  // The platform edge no longer forces HTTPS (its Force-HTTPS feature replaced
-  // our CSP), so redirect plain-HTTP requests here. The forwarded proto only
-  // exists behind the production proxy; local dev never sees it.
+  // Canonicalize to the single https origin (ADR-005). The platform edge no
+  // longer forces HTTPS (its Force-HTTPS feature replaced our CSP), so the
+  // proxy owns both redirects: plain HTTP → https, and www → apex. The public
+  // host must come from the forwarded/Host header — request.url reflects the
+  // internal listen address. Local dev sends no forwarded proto and no www.
   const forwardedProto = request.headers.get("x-forwarded-proto");
-  if (forwardedProto && forwardedProto !== "https") {
-    const httpsUrl = new URL(request.url);
-    httpsUrl.protocol = "https:";
-    return NextResponse.redirect(httpsUrl, 308);
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    const canonicalHost = host.startsWith("www.") ? host.slice(4) : host;
+    const insecure = forwardedProto !== null && forwardedProto !== "https";
+    if (insecure || canonicalHost !== host) {
+      const { pathname, search } = request.nextUrl;
+      return NextResponse.redirect(`https://${canonicalHost}${pathname}${search}`, 308);
+    }
   }
 
   const bytes = new Uint8Array(16);
