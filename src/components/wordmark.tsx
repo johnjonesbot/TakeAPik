@@ -4,7 +4,7 @@ export function Wordmark() {
   return (
     <a className="wordmark" href="/" aria-label="TakeAPik home">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/images/logo%20white%20letters.png" alt="TakeAPik" />
+      <img src="/images/wordmark-white.png" alt="TakeAPik" />
     </a>
   );
 }

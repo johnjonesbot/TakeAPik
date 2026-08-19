@@ -1,13 +1,12 @@
-// Landing-page hero mosaic. Photos are served directly from the web root at
-// /images/mosaic-*.png (uploaded outside the Next public/ folder), so a plain
-// <img> is used rather than next/image, whose optimizer runs inside the Node
-// process and can't reach files the front web server serves.
+// Landing-page hero mosaic. Photos ship with the app in public/images and are
+// served at /images/mosaic-*.jpg, so they deploy with the code and can't be
+// wiped by a deploy. Optimized JPEGs; a plain <img> keeps it simple.
 const tiles = [
-  { className: "tile tall", label: "First dance", src: "/images/mosaic-1.png" },
-  { className: "tile warm", label: "Friends laughing", src: "/images/mosaic-2.png" },
-  { className: "tile violet", label: "The vows", src: "/images/mosaic-3.png" },
-  { className: "tile wide", label: "Family table", src: "/images/mosaic-4.png" },
-  { className: "tile coral", label: "Confetti", src: "/images/mosaic-5.png" }
+  { className: "tile tall", label: "First dance", src: "/images/mosaic-1.jpg" },
+  { className: "tile warm", label: "Friends laughing", src: "/images/mosaic-2.jpg" },
+  { className: "tile violet", label: "The vows", src: "/images/mosaic-3.jpg" },
+  { className: "tile wide", label: "Family table", src: "/images/mosaic-4.jpg" },
+  { className: "tile coral", label: "Confetti", src: "/images/mosaic-5.jpg" }
 ];
 
 export function MosaicPreview() {
