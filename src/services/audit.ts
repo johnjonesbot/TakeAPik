@@ -16,6 +16,7 @@ export type AuditAction =
   | "album.export.request"
   | "tenant.provision"
   | "tenant.archive"
+  | "owner.password_reset"
   | "platform.super_admin.bootstrap";
 
 export interface AuditEventInput {

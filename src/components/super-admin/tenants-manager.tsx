@@ -29,6 +29,8 @@ export function TenantsManager() {
   const [message, setMessage] = useState("");
   const [provisioned, setProvisioned] = useState<Provisioned | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<TenantSummary | null>(null);
+  const [resetTarget, setResetTarget] = useState<TenantSummary | null>(null);
+  const [resetResult, setResetResult] = useState<{ ownerEmail: string; temporaryPassword: string } | null>(null);
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/v1/super-admin/tenants");
@@ -84,6 +86,25 @@ export function TenantsManager() {
     }
   }
 
+  async function resetOwnerPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!resetTarget) return;
+    const formData = new FormData(event.currentTarget);
+    const response = await fetch(`/api/v1/super-admin/tenants/${resetTarget.id}/owner-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ totpCode: formData.get("totpCode") })
+    });
+    const payload = (await response.json()) as Envelope<{ ownerEmail: string; temporaryPassword: string }>;
+    if (response.ok && payload.data) {
+      setResetTarget(null);
+      setResetResult(payload.data);
+      setMessage("");
+    } else {
+      setMessage(payload.error?.message ?? "Password reset failed");
+    }
+  }
+
   return (
     <div className="admin-panels">
       <form className="admin-panel" onSubmit={(event) => void provision(event)}>
@@ -135,9 +156,21 @@ export function TenantsManager() {
               </div>
               <div className="friend-actions">
                 {tenant.status !== "archived" ? (
-                  <button type="button" className="ghost danger" onClick={() => setArchiveTarget(tenant)}>
-                    Archive
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => {
+                        setResetResult(null);
+                        setResetTarget(tenant);
+                      }}
+                    >
+                      Reset owner password
+                    </button>
+                    <button type="button" className="ghost danger" onClick={() => setArchiveTarget(tenant)}>
+                      Archive
+                    </button>
+                  </>
                 ) : null}
               </div>
             </li>
@@ -164,6 +197,34 @@ export function TenantsManager() {
               <button type="submit" className="ghost danger">Archive this album</button>
             </div>
           </form>
+        ) : null}
+        {resetTarget ? (
+          <form className="archive-confirm" onSubmit={(event) => void resetOwnerPassword(event)}>
+            <p className="panel-note">
+              Resetting the password for <strong>{resetTarget.ownerEmail}</strong> ({resetTarget.slug}) signs
+              them out everywhere and replaces their password with a one-time temporary one, shown only to
+              you, once. Confirm with a fresh authenticator code.
+            </p>
+            <div className="field">
+              <label htmlFor="reset-totp">Authenticator code</label>
+              <input id="reset-totp" name="totpCode" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required />
+            </div>
+            <div className="upload-actions">
+              <button type="button" className="ghost" onClick={() => setResetTarget(null)}>Cancel</button>
+              <button type="submit" className="ghost danger">Reset password</button>
+            </div>
+          </form>
+        ) : null}
+        {resetResult ? (
+          <div className="rotated-code" role="status">
+            <p style={{ margin: 0 }}>
+              Temporary password for <strong>{resetResult.ownerEmail}</strong>:{" "}
+              <strong>{resetResult.temporaryPassword}</strong>
+            </p>
+            <p style={{ margin: "6px 0 0", fontSize: 12 }}>
+              Shown once — pass it to the host now and have them change it after signing in.
+            </p>
+          </div>
         ) : null}
         <p className="form-status" aria-live="polite">{message}</p>
       </section>

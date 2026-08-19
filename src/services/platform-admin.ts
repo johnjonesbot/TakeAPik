@@ -5,7 +5,7 @@ import { openSecret } from "@/lib/secret-box";
 import { verifyTotpCode } from "@/lib/totp";
 import { findPlatformUserByEmail, findPlatformUserById } from "@/lib/repositories/platform-users";
 import { archiveTenant, findTenantById } from "@/lib/repositories/tenants";
-import { revokeSessionsForTenant } from "@/lib/repositories/sessions";
+import { revokeSessionsForPlatformUser, revokeSessionsForTenant } from "@/lib/repositories/sessions";
 import { writeAuditEvent } from "@/services/audit";
 import { provisionTenant } from "@/services/provisioning";
 import type { Actor } from "@/services/sessions";
@@ -143,5 +143,58 @@ export async function archiveTenantAsSuperAdmin(
       metadata: { revokedSessions, revokedInvites: revokedInvites?.count ?? 0 }
     });
     return "archived" as const;
+  });
+}
+
+export type OwnerPasswordResetResult =
+  | { outcome: "reset"; ownerEmail: string; temporaryPassword: string }
+  | { outcome: "step-up-failed" }
+  | { outcome: "forbidden-target" }
+  | { outcome: "not-found" };
+
+/**
+ * Recovery path for an event admin who lost their password: a super-admin
+ * proves a fresh TOTP code, the owner gets a new one-time temporary password
+ * (returned once, stored only as a hash), and every existing session of that
+ * account dies. Super-admin accounts are never resettable this way — their
+ * credentials are managed outside tenant administration.
+ */
+export async function resetOwnerPasswordAsSuperAdmin(
+  actor: SuperAdminActor,
+  tenantId: string,
+  confirmation: { totpCode: string }
+): Promise<OwnerPasswordResetResult> {
+  const db = getPool();
+  const user = await findPlatformUserById(db, actor.platformUserId);
+  if (!user?.is_super_admin || !user.mfa_enabled_at || !user.mfa_totp_secret_encrypted) {
+    return { outcome: "step-up-failed" };
+  }
+  const secret = openSecret(user.mfa_totp_secret_encrypted, "totp");
+  if (!verifyTotpCode(secret, confirmation.totpCode)) return { outcome: "step-up-failed" };
+
+  const tenant = await findTenantById(db, tenantId);
+  if (!tenant || tenant.status === "archived") return { outcome: "not-found" };
+  const owner = await findPlatformUserById(db, tenant.owner_user_id);
+  if (!owner || owner.disabled_at) return { outcome: "not-found" };
+  if (owner.is_super_admin) return { outcome: "forbidden-target" };
+
+  const temporaryPassword = randomBytes(12).toString("base64url");
+  const passwordHash = await hashPassword(temporaryPassword);
+
+  return withTransaction(async (client) => {
+    await query(client, `UPDATE platform_users SET password_hash = $2, updated_at = now() WHERE id = $1`, [
+      owner.id,
+      passwordHash
+    ]);
+    const revokedSessions = await revokeSessionsForPlatformUser(client, owner.id);
+    await writeAuditEvent(client, {
+      tenantId,
+      actorPlatformUserId: actor.platformUserId,
+      action: "owner.password_reset",
+      targetType: "platform_user",
+      targetId: owner.id,
+      metadata: { revokedSessions }
+    });
+    return { outcome: "reset" as const, ownerEmail: owner.email, temporaryPassword };
   });
 }
