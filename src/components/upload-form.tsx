@@ -63,7 +63,6 @@ export function UploadForm() {
             ref={fileInput}
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={(event) => void onFileChosen(event)}
             disabled={stage.step === "preparing"}
           />
