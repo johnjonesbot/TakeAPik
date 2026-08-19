@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/wordmark";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { AccountSecurity } from "@/components/admin/account-security";
 import { CoverPicker } from "@/components/admin/cover-picker";
@@ -28,9 +29,7 @@ export default async function AdminPage() {
     return (
       <main className="landing-shell tenant-login-shell">
         <header className="brand-bar">
-          <a className="wordmark" href="/" aria-label="TakeAPik home">
-            take<span>a</span>pik
-          </a>
+          <Wordmark />
         </header>
         <section className="tenant-login">
           <h1>{tenant.context.displayName}</h1>

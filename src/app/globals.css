@@ -174,3 +174,8 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .mosaic .tile > img { inset: 0; height: 100%; object-fit: cover; position: absolute; width: 100%; z-index: 0; }
 .mosaic .tile::before { background: linear-gradient(to top, rgba(6, 3, 12, 0.55), rgba(6, 3, 12, 0) 55%); z-index: 1; }
 .mosaic .tile > span { align-self: flex-end; position: relative; z-index: 2; }
+
+/* Official wordmark logo in headers (replaces the old CSS text wordmark) */
+.wordmark { display: inline-flex; align-items: center; line-height: 0; }
+.wordmark img { display: block; height: 30px; width: auto; }
+@media (max-width: 520px) { .wordmark img { height: 26px; } }

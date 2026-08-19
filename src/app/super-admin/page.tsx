@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/wordmark";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { TenantsManager } from "@/components/super-admin/tenants-manager";
 import { getAuthorizedPageActor, getPageTenant } from "@/lib/page-context";
@@ -23,9 +24,7 @@ export default async function SuperAdminPage() {
     return (
       <main className="landing-shell tenant-login-shell">
         <header className="brand-bar">
-          <a className="wordmark" href="/" aria-label="TakeAPik home">
-            take<span>a</span>pik
-          </a>
+          <Wordmark />
         </header>
         <section className="tenant-login">
           <h1>Platform</h1>

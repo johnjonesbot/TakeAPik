@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/wordmark";
 import { AccessForm } from "@/components/access-form";
 import { getPageTenant } from "@/lib/page-context";
 import { acceptInvitation } from "@/services/invitations";
@@ -33,9 +34,7 @@ export default async function InvitePage({ searchParams }: { searchParams: Promi
   return (
     <main className="landing-shell tenant-login-shell">
       <header className="brand-bar">
-        <a className="wordmark" href="/" aria-label="TakeAPik home">
-          take<span>a</span>pik
-        </a>
+        <Wordmark />
       </header>
       <section className="tenant-login">
         <h1>{invite.eventName}</h1>

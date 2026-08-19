@@ -1,3 +1,4 @@
+import { Wordmark } from "@/components/wordmark";
 import { AccessForm } from "@/components/access-form";
 import { MosaicPreview } from "@/components/mosaic-preview";
 import { PhotoGallery } from "@/components/photo-gallery";
@@ -12,9 +13,7 @@ function RootLanding() {
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
       <header className="brand-bar">
-        <a className="wordmark" href="/" aria-label="TakeAPik home">
-          take<span>a</span>pik
-        </a>
+        <Wordmark />
         <p>private albums · shared beautifully</p>
       </header>
 
@@ -40,9 +39,7 @@ function TenantLogin({ albumName }: { albumName: string }) {
     <main className="landing-shell tenant-login-shell">
       <div className="ambient ambient-one" />
       <header className="brand-bar">
-        <a className="wordmark" href="/" aria-label="TakeAPik home">
-          take<span>a</span>pik
-        </a>
+        <Wordmark />
       </header>
       <section className="tenant-login">
         <h1>{albumName}</h1>
