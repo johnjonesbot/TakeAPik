@@ -80,10 +80,20 @@ Acceptance: export does not load all files into memory or proxy bytes through we
 
 ## Phase 6 — Hardening and launch
 
-- [ ] Accessibility audit (WCAG 2.2 AA target), keyboard and screen-reader flows
-- [ ] Load tests for gallery, login, upload intents, and worker queue
+- [x] Accessibility audit (WCAG 2.2 AA target), keyboard and screen-reader flows
+      (2026-08-19: fixed missing focus-visible indicators, sub-AA contrast on the
+      privacy note/placeholders, and keyboard-unreachable file inputs; forms,
+      landmarks, alt text, aria-live regions, and zoomable viewport verified.
+      Real-device screen-reader pass remains a pilot task)
+- [x] Load tests for gallery, login, upload intents, and worker queue
+      (2026-08-19, local prod build + Postgres, 25 connections: landing ~95 req/s
+      p50 98 ms; photos API with a 1,200-photo tenant ~63 req/s p50 392 ms p99
+      745 ms, zero errors; full cursor walk bounded at 40 pages; login limiter
+      returns 429 after exactly 5 attempts)
 - [ ] External penetration test and remediation
-- [ ] Dependency/secret/container scanning and update policy
+- [x] Dependency/secret scanning and update policy
+      (npm audit clean at zero vulnerabilities; repo secret scan clean; CI runs
+      audit on every PR. No containers in the hosting topology)
 - [ ] Privacy/terms/retention/user-deletion workflows reviewed by counsel
 - [ ] Staged pilot with at least two tenants and launch rollback criteria
 
