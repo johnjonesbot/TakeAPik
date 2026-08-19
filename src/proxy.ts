@@ -29,6 +29,16 @@ function buildCsp(nonce: string): string {
 }
 
 export function proxy(request: NextRequest) {
+  // The platform edge no longer forces HTTPS (its Force-HTTPS feature replaced
+  // our CSP), so redirect plain-HTTP requests here. The forwarded proto only
+  // exists behind the production proxy; local dev never sees it.
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  if (forwardedProto && forwardedProto !== "https") {
+    const httpsUrl = new URL(request.url);
+    httpsUrl.protocol = "https:";
+    return NextResponse.redirect(httpsUrl, 308);
+  }
+
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   const nonce = btoa(String.fromCharCode(...bytes));
