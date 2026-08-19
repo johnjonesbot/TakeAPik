@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { proxy } from "./proxy";
 
 function requestFor(opts: { proto?: string; host?: string } = {}): NextRequest {
+  process.env.TRUST_PROXY = "true";
   const headers = new Headers();
   if (opts.proto) headers.set("x-forwarded-proto", opts.proto);
   if (opts.host) headers.set("host", opts.host);
@@ -38,6 +39,13 @@ describe("proxy", () => {
 
   it("does not redirect local requests that have no forwarded proto", () => {
     const response = proxy(requestFor({ host: "localhost:3000" }));
+    expect(response.status).toBe(200);
+  });
+
+  it("ignores forwarded proto when the proxy is not trusted (local next start)", () => {
+    const request = requestFor({ proto: "http", host: "localhost:3000" });
+    process.env.TRUST_PROXY = "false";
+    const response = proxy(request);
     expect(response.status).toBe(200);
   });
 });

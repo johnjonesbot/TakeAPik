@@ -33,9 +33,13 @@ export function proxy(request: NextRequest) {
   // longer forces HTTPS (its Force-HTTPS feature replaced our CSP), so the
   // proxy owns both redirects: plain HTTP → https, and www → apex. The public
   // host must come from the forwarded/Host header — request.url reflects the
-  // internal listen address. Local dev sends no forwarded proto and no www.
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  // internal listen address. Forwarded headers are only meaningful behind the
+  // production proxy (TRUST_PROXY, same rule as request-context); the Node
+  // server itself stamps x-forwarded-proto=http locally, which must not
+  // redirect plain-HTTP localhost onto a TLS port that doesn't exist.
+  const trustProxy = process.env.TRUST_PROXY === "true";
+  const forwardedProto = trustProxy ? request.headers.get("x-forwarded-proto") : null;
+  const host = (trustProxy ? request.headers.get("x-forwarded-host") : null) ?? request.headers.get("host");
   if (host) {
     const canonicalHost = host.startsWith("www.") ? host.slice(4) : host;
     const insecure = forwardedProto !== null && forwardedProto !== "https";
