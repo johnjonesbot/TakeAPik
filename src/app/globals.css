@@ -51,7 +51,22 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 .mosaic { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); grid-template-rows: 185px 160px 180px; height: 100%; }
 .tile { align-items: flex-end; background: linear-gradient(145deg, #5f4495, #241532); border: 1px solid rgba(255,255,255,.15); border-radius: 26px; box-shadow: 0 25px 45px rgba(0,0,0,.25); display: flex; min-height: 170px; overflow: hidden; padding: 18px; position: relative; }
 .tile::before { background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.38), transparent 28%), linear-gradient(25deg, transparent 30%, rgba(255,255,255,.11)); content: ""; inset: 0; position: absolute; }
-.tile span { background: rgba(8,3,15,.48); border: 1px solid rgba(255,255,255,.13); border-radius: 99px; font-size: 11px; padding: 6px 10px; position: relative; }
+/* Each tile drifts on its own rhythm: one shared keyframe path, but staggered
+   negative delays and unequal durations keep the five tiles from ever syncing,
+   so the motion reads as random. */
+@keyframes tile-drift {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25%  { transform: translate3d(3px, -8px, 0) rotate(0.45deg); }
+  50%  { transform: translate3d(-4px, 5px, 0) rotate(-0.35deg); }
+  75%  { transform: translate3d(4px, 7px, 0) rotate(0.25deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+.mosaic .tile { animation: tile-drift 9s ease-in-out infinite; }
+.mosaic .tile:nth-child(1) { animation-duration: 8.2s; animation-delay: -1.7s; }
+.mosaic .tile:nth-child(2) { animation-duration: 10.6s; animation-delay: -4.3s; }
+.mosaic .tile:nth-child(3) { animation-duration: 9.4s; animation-delay: -7.1s; }
+.mosaic .tile:nth-child(4) { animation-duration: 11.8s; animation-delay: -2.9s; }
+.mosaic .tile:nth-child(5) { animation-duration: 8.9s; animation-delay: -5.6s; }
 .tile.tall { background: linear-gradient(165deg, #cc8a62, #513742); grid-row: span 2; }
 .tile.warm { background: linear-gradient(145deg, #d25e4f, #572339); }
 .tile.violet { background: linear-gradient(145deg, #6367b5, #231945); }
@@ -72,7 +87,7 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
   .mosaic { gap: 9px; grid-template-rows: 145px 125px 145px; }
   .tile { border-radius: 18px; }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
 
 /* Portal shells (album, admin, super-admin) */
 .tenant-login-shell { display: flex; flex-direction: column; }
@@ -180,7 +195,6 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 /* Landing mosaic — real event photos fill each tile */
 .mosaic .tile > img { inset: 0; height: 100%; object-fit: cover; position: absolute; width: 100%; z-index: 0; }
 .mosaic .tile::before { background: linear-gradient(to top, rgba(6, 3, 12, 0.55), rgba(6, 3, 12, 0) 55%); z-index: 1; }
-.mosaic .tile > span { align-self: flex-end; position: relative; z-index: 2; }
 
 /* Official wordmark logo in headers (replaces the old CSS text wordmark) */
 .wordmark { display: inline-flex; align-items: center; line-height: 0; }

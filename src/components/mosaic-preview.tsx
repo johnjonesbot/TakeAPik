@@ -17,7 +17,6 @@ export function MosaicPreview() {
           <div className={tile.className} key={tile.label}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={tile.src} alt={tile.label} decoding="async" />
-            <span>{tile.label}</span>
           </div>
         ))}
       </div>
