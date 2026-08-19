@@ -37,6 +37,17 @@ describe("proxy", () => {
     expect(response.headers.get("strict-transport-security")).toContain("max-age=63072000");
   });
 
+  it("allows the derived storage origin in connect-src for direct uploads", () => {
+    process.env.S3_ENDPOINT = "https://acct123.r2.cloudflarestorage.com";
+    process.env.S3_BUCKET = "takeapik-media";
+    process.env.S3_FORCE_PATH_STYLE = "false";
+    const response = proxy(requestFor({ proto: "https", host: "takeapik.com" }));
+    const csp = response.headers.get("content-security-policy") ?? "";
+    expect(csp).toContain(
+      "connect-src 'self' https://takeapik-media.acct123.r2.cloudflarestorage.com"
+    );
+  });
+
   it("does not redirect local requests that have no forwarded proto", () => {
     const response = proxy(requestFor({ host: "localhost:3000" }));
     expect(response.status).toBe(200);

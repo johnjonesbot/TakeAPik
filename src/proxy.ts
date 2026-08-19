@@ -6,7 +6,27 @@ import { NextRequest, NextResponse } from "next/server";
  * is the front line against script injection stealing another album's data —
  * alongside HttpOnly cookies and the session-scoped tenant checks in the app.
  */
+/**
+ * Photo bytes go straight from the browser to object storage via presigned
+ * URLs (never through this origin), so connect-src must include the storage
+ * origin. Derived from the same env the S3 client uses: with path-style off
+ * the presigned host is `<bucket>.<endpoint-host>`.
+ */
+function storageOrigin(): string | null {
+  const endpoint = process.env.S3_ENDPOINT;
+  const bucket = process.env.S3_BUCKET;
+  if (!endpoint || !bucket) return null;
+  try {
+    const url = new URL(endpoint);
+    const pathStyle = process.env.S3_FORCE_PATH_STYLE === "true";
+    return pathStyle ? url.origin : `${url.protocol}//${bucket}.${url.host}`;
+  } catch {
+    return null;
+  }
+}
+
 function buildCsp(nonce: string): string {
+  const upload = storageOrigin();
   return [
     "default-src 'self'",
     // 'strict-dynamic' + nonce: only our nonced bootstrap (and what it loads)
@@ -18,7 +38,7 @@ function buildCsp(nonce: string): string {
     // in-browser preview uses blob:; the brand images are same-origin.
     "img-src 'self' data: blob: https:",
     "font-src 'self'",
-    "connect-src 'self'",
+    upload ? `connect-src 'self' ${upload}` : "connect-src 'self'",
     "media-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
