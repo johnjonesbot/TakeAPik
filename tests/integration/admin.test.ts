@@ -8,7 +8,7 @@ import { setStorageForTesting } from "@/lib/storage";
 import { resolveActorFromToken, issueSession } from "@/services/sessions";
 import { acceptInvitation, resendInvitation, sendInvitations } from "@/services/invitations";
 import { createFriend, disableFriend, importFriends, listFriends } from "@/services/friends";
-import { rotateEventAccessCode, setCoverPhoto, updateEventSettings, type AdminActor } from "@/services/event-admin";
+import { getEventSettings, rotateEventAccessCode, setCoverPhoto, updateEventSettings, type AdminActor } from "@/services/event-admin";
 import type { RateLimiter } from "@/lib/rate-limit";
 import { FakeStorage } from "./fake-storage";
 import { provisionTestTenant, resetHelperState, truncateAll, type ProvisionedTenant } from "./helpers";
@@ -77,6 +77,30 @@ describe("event administration", () => {
     const event = await findEventByTenant(getPool(), tenant.tenant.id);
     await expect(verifyAccessCode(event!.access_code_hash, rotated.accessCode)).resolves.toBe(true);
     await expect(verifyAccessCode(event!.access_code_hash, tenant.accessCode)).resolves.toBe(false);
+  });
+
+  it("keeps the current access code visible to the admin (ADR-006)", async () => {
+    const password = "admin-password-123";
+    const tenant = await provisionTestTenant({ ownerPasswordHash: await hashPassword(password) });
+    const actor = adminActor(tenant);
+
+    // Provisioning already seeds the visible code.
+    const initial = await getEventSettings(actor);
+    expect(initial?.accessCode).toBe(tenant.accessCode);
+
+    // After rotation, settings show the new code (not just the one-time response).
+    const rotated = await rotateEventAccessCode(actor, password);
+    expect(rotated.outcome).toBe("rotated");
+    if (rotated.outcome !== "rotated") return;
+    const after = await getEventSettings(actor);
+    expect(after?.accessCode).toBe(rotated.accessCode);
+
+    // Rows predating visibility surface null instead of failing.
+    await getPool().query(`UPDATE events SET access_code_encrypted = NULL WHERE tenant_id = $1`, [
+      tenant.tenant.id
+    ]);
+    const legacy = await getEventSettings(actor);
+    expect(legacy?.accessCode).toBeNull();
   });
 
   it("enforces normalized-email uniqueness per tenant and supports import", async () => {

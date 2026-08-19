@@ -9,6 +9,7 @@ export interface CreateEventInput {
   tenantId: string;
   name: string;
   accessCodeHash: string;
+  accessCodeEncrypted: string;
   timezone?: string;
   startsAt?: Date;
 }
@@ -16,22 +17,27 @@ export interface CreateEventInput {
 export async function createEvent(db: Queryable, input: CreateEventInput): Promise<EventRow> {
   const row = await queryOne<EventRow>(
     db,
-    `INSERT INTO events (tenant_id, name, access_code_hash, timezone, starts_at)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO events (tenant_id, name, access_code_hash, access_code_encrypted, timezone, starts_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [input.tenantId, input.name, input.accessCodeHash, input.timezone ?? "UTC", input.startsAt ?? null]
+    [input.tenantId, input.name, input.accessCodeHash, input.accessCodeEncrypted, input.timezone ?? "UTC", input.startsAt ?? null]
   );
   if (!row) throw new Error("event insert returned no row");
   return row;
 }
 
-export async function rotateAccessCode(db: Queryable, tenantId: string, accessCodeHash: string): Promise<EventRow | null> {
+export async function rotateAccessCode(
+  db: Queryable,
+  tenantId: string,
+  accessCodeHash: string,
+  accessCodeEncrypted: string
+): Promise<EventRow | null> {
   return queryOne<EventRow>(
     db,
     `UPDATE events
-     SET access_code_hash = $2, access_code_last_changed_at = now(), updated_at = now()
+     SET access_code_hash = $2, access_code_encrypted = $3, access_code_last_changed_at = now(), updated_at = now()
      WHERE tenant_id = $1
      RETURNING *`,
-    [tenantId, accessCodeHash]
+    [tenantId, accessCodeHash, accessCodeEncrypted]
   );
 }

@@ -152,3 +152,13 @@ Only an event admin can request a full export. A background job streams tenant o
 - Photo bytes never touch the app origin: originals live in a **private** object-storage bucket under non-guessable, tenant-prefixed, server-generated keys, and are served only through short-lived signed URLs. `Referrer-Policy: strict-origin-when-cross-origin` keeps those URLs out of referers.
 
 **Consequence:** No wildcard or second-host DNS/TLS is needed. The super-admin portal shares the origin, so its session is separated from album sessions only by role checks (a super-admin session is never treated as an album member). Photo-leak resistance depends on the object-storage bucket being private with signed-URL access — a launch requirement, not optional.
+
+## ADR-006: Access code visible to the event admin
+
+**Status:** Accepted (amends the hash-only storage rule from the original security model for access codes specifically)
+
+**Context:** Hosts need to hand the access code to last-minute guests long after provisioning or rotation. With hash-only storage the code was shown exactly once, which in practice meant hosts wrote it down somewhere less safe than the product.
+
+**Decision:** Keep the keyed slow hash as the only value used for verification, and additionally store the current code sealed with the app secret (`secret-box`, same mechanism as MFA secrets). The admin event-settings endpoint decrypts it only for the authenticated event admin of that tenant. Rotation replaces both values atomically and now requires an explicit confirmation in the UI, since the old code dies immediately. Invite tokens, session tokens, and passwords remain strictly hash-only.
+
+**Consequence:** A database leak alone still does not reveal codes (the sealing key lives in the app environment, not the database), but an attacker holding both the database and the app secrets can decrypt current codes. That risk is accepted for guest-level codes; it does not extend to any credential that grants account access. Events provisioned before this change show no code until their first rotation.

@@ -17,7 +17,7 @@ Private photographs, guest emails, admin credentials, access codes, session/invi
 ### Credentials and sessions
 
 - Hash admin passwords with Argon2id using OWASP-current parameters; enforce 12+ characters and allow password managers/paste.
-- Generate codes with a cryptographically secure RNG, preserving leading zeroes. Store a keyed slow hash; display only at creation/rotation.
+- Generate codes with a cryptographically secure RNG, preserving leading zeroes. The keyed slow hash stays authoritative for verification; additionally the current code is stored sealed (app-secret encryption) so the event admin's settings page can always display it (ADR-006). It is decrypted only for the authenticated event admin and never logged.
 - Generate 256-bit random session/invite tokens and persist only SHA-256/HMAC hashes with a server pepper.
 - Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`, host-only.
 - Rotate/revoke sessions on privilege changes, password change, membership disable, access-code rotation (policy choice), and archive.

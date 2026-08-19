@@ -1,6 +1,7 @@
 import { getPool, queryOne, withTransaction } from "@/lib/db";
 import { generateAccessCode, hashAccessCode } from "@/lib/access-code";
 import { verifyPassword } from "@/lib/passwords";
+import { openSecret, sealSecret } from "@/lib/secret-box";
 import { findEventByTenant, rotateAccessCode } from "@/lib/repositories/events";
 import { findPlatformUserById } from "@/lib/repositories/platform-users";
 import type { EventRow } from "@/lib/repositories/types";
@@ -12,14 +13,26 @@ export type AdminActor = Actor & { kind: "admin" };
 export interface EventSettings {
   name: string;
   timezone: string;
+  /** The current guest access code (ADR-006), decrypted only for the event admin; null for rows predating visibility. */
+  accessCode: string | null;
   accessCodeLastChangedAt: string;
   coverPhotoId: string | null;
+}
+
+function currentAccessCode(event: EventRow): string | null {
+  if (!event.access_code_encrypted) return null;
+  try {
+    return openSecret(event.access_code_encrypted, "access-code");
+  } catch {
+    return null;
+  }
 }
 
 function toSettings(event: EventRow): EventSettings {
   return {
     name: event.name,
     timezone: event.timezone,
+    accessCode: currentAccessCode(event),
     accessCodeLastChangedAt: event.access_code_last_changed_at.toISOString(),
     coverPhotoId: event.cover_photo_id
   };
@@ -76,9 +89,10 @@ export async function rotateEventAccessCode(actor: AdminActor, currentPassword: 
 
   const accessCode = generateAccessCode();
   const accessCodeHash = await hashAccessCode(accessCode);
+  const accessCodeEncrypted = sealSecret(accessCode, "access-code");
 
   return withTransaction(async (client) => {
-    const event = await rotateAccessCode(client, actor.tenantId, accessCodeHash);
+    const event = await rotateAccessCode(client, actor.tenantId, accessCodeHash, accessCodeEncrypted);
     if (!event) return { outcome: "not-found" as const };
     await writeAuditEvent(client, {
       tenantId: actor.tenantId,

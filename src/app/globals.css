@@ -89,6 +89,12 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
 
+/* Album cover backdrop: the admin's cover photo, heavily blurred at 20%
+   opacity over the dark base. Content shells stack above it. */
+.album-backdrop { inset: 0; overflow: hidden; pointer-events: none; position: fixed; z-index: 0; }
+.album-backdrop img { filter: blur(64px) saturate(1.1); height: 100%; object-fit: cover; opacity: 0.2; transform: scale(1.15); width: 100%; }
+.portal-shell, .landing-shell { position: relative; z-index: 1; }
+
 /* Portal shells (album, admin, super-admin) */
 .tenant-login-shell { display: flex; flex-direction: column; }
 .tenant-login { margin: auto; max-width: 460px; padding: 32px 0 64px; position: relative; text-align: center; width: 100%; z-index: 1; }

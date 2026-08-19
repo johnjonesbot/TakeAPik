@@ -31,6 +31,8 @@ export interface EventRow {
   tenant_id: string;
   name: string;
   access_code_hash: string;
+  /** Sealed-box ciphertext of the current code (ADR-006); null before the first rotation on pre-existing rows. */
+  access_code_encrypted: string | null;
   access_code_last_changed_at: Date;
   starts_at: Date | null;
   timezone: string;

@@ -77,7 +77,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET/PATCH` | `/api/v1/admin/event` | Read/update name, timezone; rotate access code separately |
-| `POST` | `/api/v1/admin/event/access-code` | Step-up auth; returns new code once, never afterward |
+| `POST` | `/api/v1/admin/event/access-code` | Step-up auth; rotates the code. The current code stays visible via `GET /admin/event` (ADR-006) |
 | `GET/POST` | `/api/v1/admin/friends` | List/create memberships |
 | `PATCH/DELETE` | `/api/v1/admin/friends/{id}` | Edit or disable membership |
 | `GET` | `/api/v1/admin/invitations` | List invitations and delivery state |

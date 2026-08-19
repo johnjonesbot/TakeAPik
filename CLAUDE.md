@@ -20,7 +20,7 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Because all albums share one origin, isolation lives in the app, not the cookie host: keep the session→tenant binding authoritative, the strict nonce CSP and the security headers in `proxy.ts`, and `HttpOnly` cookies. Do not weaken the CSP (no `unsafe-inline`/`unsafe-eval` in `script-src`) or serve photo bytes from the app origin.
 - Every tenant-owned database query includes `tenant_id`, even when querying by globally unique ID.
 - Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant is resolved server-side from the album slug (or located from email + code at the marketing root), and a client-supplied tenant id is never an authority (ADR-005).
-- Store access codes, invite tokens, session tokens, and passwords only as strong one-way hashes. Never log them.
+- Store invite tokens, session tokens, and passwords only as strong one-way hashes. Access codes keep the authoritative hash for verification but are additionally stored sealed so the event admin can always view the current code (ADR-006). Never log any of them.
 - Guest sessions expire after 24 hours and use `HttpOnly`, `Secure`, `SameSite=Lax`, host-only cookies.
 - Friends can read the album and manage only their own uploads. Event admins can manage only their tenant. Only super-admins provision/archive tenants; only event admins can request full-album exports.
 - Resize in the browser to at most 1920 px before upload, but independently verify MIME type, dimensions, and byte size server-side.

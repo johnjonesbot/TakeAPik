@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { isUniqueViolation, withTransaction } from "@/lib/db";
 import { generateAccessCode, hashAccessCode } from "@/lib/access-code";
+import { sealSecret } from "@/lib/secret-box";
 import { initialsFromName, slugCandidates } from "@/lib/slug";
 import { createEvent } from "@/lib/repositories/events";
 import { createMembership } from "@/lib/repositories/memberships";
@@ -56,6 +57,7 @@ async function insertTenantWithFreeSlug(
 export async function provisionTenant(input: ProvisionTenantInput): Promise<ProvisionTenantResult> {
   const accessCode = generateAccessCode();
   const accessCodeHash = await hashAccessCode(accessCode);
+  const accessCodeEncrypted = sealSecret(accessCode, "access-code");
 
   return withTransaction(async (client) => {
     const owner =
@@ -72,6 +74,7 @@ export async function provisionTenant(input: ProvisionTenantInput): Promise<Prov
       tenantId: tenant.id,
       name: input.eventName,
       accessCodeHash,
+      accessCodeEncrypted,
       timezone: input.timezone
     });
     const ownerMembership = await createMembership(client, {
