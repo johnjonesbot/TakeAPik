@@ -199,8 +199,13 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .chip { background: var(--glass); border: 1px solid var(--line); border-radius: 99px; color: var(--muted); font-size: 11px; padding: 4px 10px; text-transform: uppercase; letter-spacing: 0.08em; }
 .chip-flagged { border-color: rgba(255, 116, 116, 0.5); color: #ff9d9d; margin-left: 8px; }
 
-/* Accounts accordion (super-admin) */
-.account-row { align-items: center; background: none; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 10px; justify-content: space-between; min-width: 0; padding: 0; text-align: left; }
+/* Accounts accordion (super-admin): black cards with a pink border; the row
+   toggle is a button, so it must out-specify the panel's orange action rule. */
+.accounts-list li { background: #000; border-color: rgba(255, 143, 179, 0.55); }
+.admin-panel button.account-row, .account-row { align-items: center; background: none; border: 0; border-radius: 0; color: var(--ink); cursor: pointer; display: flex; flex: 1; font: inherit; font-weight: 400; gap: 10px; justify-content: space-between; min-width: 0; padding: 0; text-align: left; }
+.account-row .friend-identity strong { color: #ffffff; }
+.account-row .friend-identity span { color: var(--muted); }
+.accounts-list .account-details { border-top-color: rgba(255, 143, 179, 0.3); }
 .account-details { border-top: 1px solid var(--line); display: grid; gap: 12px; justify-items: start; margin-top: 12px; padding-top: 12px; width: 100%; }
 .account-details dl { display: grid; gap: 8px; margin: 0; }
 .account-details dt { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }

@@ -218,7 +218,7 @@ export function AccountsManager() {
           </div>
         </div>
 
-        <ul className="friend-list">
+        <ul className="friend-list accounts-list">
           {visible.map((account) => {
             const isOpen = expanded === account.userId;
             const flagged = account.tenant?.flagged ?? false;
