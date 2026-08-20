@@ -47,16 +47,20 @@ export interface FeedQuery {
   cursor?: string;
   limit?: number;
   mineOnly?: boolean;
+  order?: "asc" | "desc";
 }
 
 export async function getPhotoFeed(queryInput: FeedQuery): Promise<PhotoFeed | { invalidCursor: true }> {
   const cursor = queryInput.cursor ? decodeCursor(queryInput.cursor) : undefined;
   if (queryInput.cursor && !cursor) return { invalidCursor: true };
 
+  // The cursor's embedded direction wins so a stream can never flip mid-page.
+  const order = cursor?.order ?? queryInput.order ?? "desc";
   const limit = Math.min(Math.max(queryInput.limit ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
   const page = await listReadyPhotos(getPool(), queryInput.tenantId, {
     limit,
     cursor: cursor ?? undefined,
+    order,
     uploaderMembershipId: queryInput.mineOnly ? queryInput.viewerMembershipId : undefined
   });
 
@@ -65,7 +69,9 @@ export async function getPhotoFeed(queryInput: FeedQuery): Promise<PhotoFeed | {
   return {
     photos,
     nextCursor:
-      page.hasMore && last ? encodeCursor({ createdAt: last.created_at.toISOString(), id: last.id }) : null
+      page.hasMore && last
+        ? encodeCursor({ createdAt: last.created_at_exact, id: last.id, order })
+        : null
   };
 }
 

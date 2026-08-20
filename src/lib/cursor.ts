@@ -5,6 +5,8 @@ import { constantTimeEquals } from "@/lib/tokens";
 export interface PhotoCursor {
   createdAt: string; // ISO-8601
   id: string;
+  /** Sort direction this cursor belongs to; absent on legacy cursors = "desc". */
+  order?: "asc" | "desc";
 }
 
 function sign(payload: string): string {
@@ -30,6 +32,8 @@ export function decodeCursor(value: string): PhotoCursor | null {
     ) {
       return null;
     }
+    const order = (parsed as PhotoCursor).order;
+    if (order !== undefined && order !== "asc" && order !== "desc") return null;
     return parsed as PhotoCursor;
   } catch {
     return null;

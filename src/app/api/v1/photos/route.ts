@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
     tenantId: authorized.actor.tenantId,
     viewerMembershipId: authorized.actor.membershipId,
     cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
-    limit: limitParam ? Number(limitParam) : undefined
+    limit: limitParam ? Number(limitParam) : undefined,
+    order: request.nextUrl.searchParams.get("order") === "asc" ? "asc" : "desc"
   });
   if ("invalidCursor" in feed) {
     return jsonError("VALIDATION_ERROR", "Refresh and try again", { requestId, fields: { cursor: "Invalid cursor" } });

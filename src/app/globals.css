@@ -157,6 +157,9 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 .gallery-item img { border: 1px solid var(--line); border-radius: 16px; display: block; height: auto; max-width: 100%; width: 100%; }
 .gallery-item figcaption { color: var(--muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; padding: 8px 4px 0; }
 .gallery-empty, .gallery-status { color: var(--muted); padding: 32px 0; text-align: center; }
+.gallery-toolbar { align-items: center; color: var(--muted); display: flex; gap: 10px; justify-content: flex-end; margin: 0 0 14px; }
+.gallery-toolbar .link-button { color: var(--muted); text-decoration: none; }
+.gallery-toolbar .link-button.is-active { color: var(--ink); font-weight: 700; text-decoration: underline; }
 .link-button { background: none; border: none; color: var(--violet); cursor: pointer; padding: 0; text-decoration: underline; }
 .gallery-extras { padding: 8px 4px 0; }
 .extras-actions, .extras-edit { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -181,6 +184,7 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .upload-flow { display: grid; gap: 18px; max-width: 560px; }
 .upload-drop { align-items: center; background: var(--glass); border: 1.5px dashed var(--line); border-radius: 22px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 44px 24px; text-align: center; transition: border-color .2s; }
 .upload-drop:hover { border-color: var(--violet); }
+.upload-drop-mark { height: 46px; margin-bottom: 2px; width: 46px; }
 .upload-drop.is-busy { opacity: .6; }
 /* Keep the file input focusable for keyboard users: visually hidden, never
    display:none (that removes it from tab order). The wrapping label shows the

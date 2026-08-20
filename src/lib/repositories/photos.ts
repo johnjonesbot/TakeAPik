@@ -115,18 +115,20 @@ export async function softDeletePhoto(
 }
 
 export interface PhotoPage {
-  photos: PhotoRow[];
+  photos: Array<PhotoRow & { created_at_exact: string }>;
   hasMore: boolean;
 }
 
 export interface PhotoFeedOptions {
   limit: number;
   cursor?: { createdAt: string; id: string };
+  order?: "asc" | "desc";
   uploaderMembershipId?: string;
 }
 
-/** Keyset pagination on (created_at DESC, id DESC); never offset. */
+/** Keyset pagination on (created_at, id) in either direction; never offset. */
 export async function listReadyPhotos(db: Queryable, tenantId: string, options: PhotoFeedOptions): Promise<PhotoPage> {
+  const ascending = options.order === "asc";
   const values: unknown[] = [tenantId, options.limit + 1];
   let where = "tenant_id = $1 AND status = 'ready' AND deleted_at IS NULL";
   if (options.uploaderMembershipId) {
@@ -135,11 +137,15 @@ export async function listReadyPhotos(db: Queryable, tenantId: string, options: 
   }
   if (options.cursor) {
     values.push(options.cursor.createdAt, options.cursor.id);
-    where += ` AND (created_at, id) < ($${values.length - 1}::timestamptz, $${values.length}::uuid)`;
+    where += ` AND (created_at, id) ${ascending ? ">" : "<"} ($${values.length - 1}::timestamptz, $${values.length}::uuid)`;
   }
-  const rows = await query<PhotoRow>(
+  const direction = ascending ? "ASC" : "DESC";
+  // created_at::text keeps Postgres's microseconds; a Date round-trip truncates
+  // to milliseconds, which made cursors repeat (asc) or skip (desc) photos
+  // created within the same millisecond.
+  const rows = await query<PhotoRow & { created_at_exact: string }>(
     db,
-    `SELECT * FROM photos WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT $2`,
+    `SELECT *, created_at::text AS created_at_exact FROM photos WHERE ${where} ORDER BY created_at ${direction}, id ${direction} LIMIT $2`,
     values
   );
   return { photos: rows.slice(0, options.limit), hasMore: rows.length > options.limit };

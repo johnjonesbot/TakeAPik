@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     viewerMembershipId: authorized.actor.membershipId,
     cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
     limit: limitParam ? Number(limitParam) : undefined,
+    order: request.nextUrl.searchParams.get("order") === "asc" ? "asc" : "desc",
     mineOnly: true
   });
   if ("invalidCursor" in feed) {

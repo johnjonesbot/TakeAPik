@@ -229,6 +229,51 @@ describe("upload pipeline", () => {
     expect(crossMember.outcome).toBe("not-found");
   });
 
+  it("serves the feed oldest-first when asked and keeps cursors bound to their direction", async () => {
+    const tenant = await provisionTestTenant();
+    const bytes = await makeJpeg(320, 240);
+    for (let i = 0; i < 5; i += 1) {
+      const result = await uploadReadyPhoto(storage, tenant, bytes, { width: 320, height: 240 });
+      expect(result.outcome).toBe("ready");
+    }
+
+    const newestFirst = await getPhotoFeed({
+      tenantId: tenant.tenant.id,
+      viewerMembershipId: tenant.ownerMembership.id,
+      limit: 5
+    });
+    const oldestFirst = await getPhotoFeed({
+      tenantId: tenant.tenant.id,
+      viewerMembershipId: tenant.ownerMembership.id,
+      limit: 5,
+      order: "asc"
+    });
+    if ("invalidCursor" in newestFirst || "invalidCursor" in oldestFirst) throw new Error("invalid cursor");
+    expect(oldestFirst.photos.map((photo) => photo.id)).toEqual(
+      [...newestFirst.photos.map((photo) => photo.id)].reverse()
+    );
+
+    // An asc cursor keeps walking ascending even if the caller flips the param.
+    const firstAsc = await getPhotoFeed({
+      tenantId: tenant.tenant.id,
+      viewerMembershipId: tenant.ownerMembership.id,
+      limit: 2,
+      order: "asc"
+    });
+    if ("invalidCursor" in firstAsc) throw new Error("invalid cursor");
+    const continued = await getPhotoFeed({
+      tenantId: tenant.tenant.id,
+      viewerMembershipId: tenant.ownerMembership.id,
+      limit: 2,
+      order: "desc",
+      cursor: firstAsc.nextCursor ?? undefined
+    });
+    if ("invalidCursor" in continued) throw new Error("invalid cursor");
+    expect(continued.photos.map((photo) => photo.id)).toEqual(
+      oldestFirst.photos.slice(2, 4).map((photo) => photo.id)
+    );
+  });
+
   it("paginates the feed with tamper-evident cursors and bounded pages", async () => {
     const tenant = await provisionTestTenant();
     const bytes = await makeJpeg(320, 240);

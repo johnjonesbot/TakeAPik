@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import { prepareImageForUpload, uploadPreparedImage, UploadError, type PreparedImage } from "@/lib/upload-flow.client";
+import { BrandLoader } from "@/components/brand-loader";
 
 type Stage =
   | { step: "pick" }
@@ -72,6 +73,12 @@ export function UploadForm({ onPublished }: UploadFormProps) {
             onChange={(event) => void onFileChosen(event)}
             disabled={stage.step === "preparing"}
           />
+          {stage.step === "preparing" ? (
+            <BrandLoader label="Preparing photo" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="upload-drop-mark" src="/images/brand-mark.png" alt="" decoding="async" />
+          )}
           <strong>{stage.step === "preparing" ? "Preparing…" : "Take or choose a photo"}</strong>
           <span>It's resized on your phone before it leaves — location data never uploads.</span>
           <span>Uploads open a week before the event and the album stays live for 90 days after that.</span>
