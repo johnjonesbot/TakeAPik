@@ -28,14 +28,3 @@ export async function createTenant(db: Queryable, input: CreateTenantInput): Pro
   if (!row) throw new Error("tenant insert returned no row");
   return row;
 }
-
-export async function archiveTenant(db: Queryable, tenantId: string): Promise<TenantRow | null> {
-  return queryOne<TenantRow>(
-    db,
-    `UPDATE tenants
-     SET status = 'archived', archived_at = now(), updated_at = now()
-     WHERE id = $1 AND status <> 'archived'
-     RETURNING *`,
-    [tenantId]
-  );
-}

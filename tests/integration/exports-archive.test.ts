@@ -6,7 +6,7 @@ import { generateTotpSecret, totpCode } from "@/lib/totp";
 import { setStorageForTesting } from "@/lib/storage";
 import { getExport, requestExport, runAlbumExportJob, deleteExpiredExports } from "@/services/exports";
 import { enqueueJob, runJobsOnce, type JobRow } from "@/services/jobs";
-import { archiveTenantAsSuperAdmin, listTenants, type SuperAdminActor } from "@/services/platform-admin";
+import type { SuperAdminActor } from "@/services/platform-admin";
 import { lookupTenantBySlug } from "@/services/tenant-context";
 import { issueSession, resolveActorFromToken } from "@/services/sessions";
 import type { AdminActor } from "@/services/event-admin";
@@ -126,50 +126,4 @@ describe("exports, jobs, and archival", () => {
     expect(storage.objects.has("zip-key")).toBe(false);
   });
 
-  it("archive demands slug + TOTP step-up, then kills sessions, invites, and reachability", async () => {
-    const tenant = await provisionTestTenant();
-    const { actor, totpSecret } = await makeSuperAdmin();
-
-    const session = await issueSession(getPool(), {
-      tenantId: tenant.tenant.id,
-      membershipId: tenant.ownerMembership.id
-    });
-    await getPool().query(
-      `INSERT INTO invitations (tenant_id, membership_id, token_hash, expires_at, status)
-       VALUES ($1, $2, 'some-hash', now() + interval '7 days', 'sent')`,
-      [tenant.tenant.id, tenant.ownerMembership.id]
-    );
-
-    expect(
-      await archiveTenantAsSuperAdmin(actor, tenant.tenant.id, { confirmSlug: tenant.tenant.slug, totpCode: "000000" })
-    ).toBe("step-up-failed");
-    expect(
-      await archiveTenantAsSuperAdmin(actor, tenant.tenant.id, { confirmSlug: "wrong-slug", totpCode: totpCode(totpSecret) })
-    ).toBe("confirm-mismatch");
-
-    expect(
-      await archiveTenantAsSuperAdmin(actor, tenant.tenant.id, {
-        confirmSlug: tenant.tenant.slug,
-        totpCode: totpCode(totpSecret)
-      })
-    ).toBe("archived");
-
-    expect(await resolveActorFromToken(session.token)).toBeNull();
-    const invites = await getPool().query<{ status: string }>("SELECT status FROM invitations WHERE tenant_id = $1", [
-      tenant.tenant.id
-    ]);
-    expect(invites.rows.every((row) => row.status === "revoked")).toBe(true);
-    expect(await lookupTenantBySlug(tenant.tenant.slug)).toEqual({ kind: "unavailable" });
-
-    const summary = (await listTenants()).find((row) => row.id === tenant.tenant.id);
-    expect(summary?.status).toBe("archived");
-
-    // Re-archiving is a no-op refusal, not a crash.
-    expect(
-      await archiveTenantAsSuperAdmin(actor, tenant.tenant.id, {
-        confirmSlug: tenant.tenant.slug,
-        totpCode: totpCode(totpSecret)
-      })
-    ).toBe("not-found");
-  });
 });

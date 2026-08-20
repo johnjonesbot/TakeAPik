@@ -12,7 +12,7 @@ All paths live on the single `takeapik.com` origin (ADR-005).
 | `/a/{slug}/my-uploads` | Friend | Current friend's photos |
 | `/a/{slug}/invite` | Friend | Invitation landing; prefills email from the token, still requires the access code |
 | `/a/{slug}/admin` | Event admin | Single settings page: event details, access code, friends & invitations, cover photo, export, password & MFA |
-| `/super-admin` | Super-admin | Tenant provisioning and archive controls |
+| `/super-admin` | Super-admin | Accounts console: provisioning, retention flags, password resets, album and account deletion |
 
 ## API conventions
 
@@ -95,7 +95,6 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 |---|---|---|
 | `GET/POST` | `/api/v1/super-admin/tenants` | List/provision tenant and owner; provisioning requires the event date (ADR-007) |
 | `GET/PATCH` | `/api/v1/super-admin/tenants/{id}` | View/edit platform-controlled fields |
-| `POST` | `/api/v1/super-admin/tenants/{id}/archive` | Confirm + step-up auth + revoke tenant sessions |
 | `POST` | `/api/v1/super-admin/tenants/{id}/owner-password` | Step-up auth; resets the owner's password to a one-time temporary value (returned once), revokes their sessions. Refuses super-admin targets |
 | `PATCH` | `/api/v1/super-admin/account` | Super-admin's own email and/or password; current password required. Password change revokes other sessions |
 | `GET` | `/api/v1/super-admin/accounts` | All admin accounts with album, event, and retention-flag state (ADR-007) |

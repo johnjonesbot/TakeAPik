@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/passwords";
 import { openSecret } from "@/lib/secret-box";
 import { verifyTotpCode } from "@/lib/totp";
 import { findPlatformUserByEmail, findPlatformUserById } from "@/lib/repositories/platform-users";
-import { archiveTenant, findTenantById } from "@/lib/repositories/tenants";
+import { findTenantById } from "@/lib/repositories/tenants";
 import { revokeSessionsForPlatformUser, revokeSessionsForTenant } from "@/lib/repositories/sessions";
 import { computeRetention } from "@/lib/retention";
 import { getStorage } from "@/lib/storage";
@@ -102,53 +102,6 @@ export async function provisionTenantAsSuperAdmin(
     accessCode: result.accessCode,
     temporaryPassword
   };
-}
-
-export type ArchiveResult = "archived" | "step-up-failed" | "confirm-mismatch" | "not-found";
-
-/**
- * Archiving is destructive for guests, so it takes double confirmation: the
- * exact tenant slug retyped plus a fresh TOTP code. Sessions and outstanding
- * invitations die in the same transaction; the tenant becomes unreachable.
- */
-export async function archiveTenantAsSuperAdmin(
-  actor: SuperAdminActor,
-  tenantId: string,
-  confirmation: { confirmSlug: string; totpCode: string }
-): Promise<ArchiveResult> {
-  const db = getPool();
-  const user = await findPlatformUserById(db, actor.platformUserId);
-  if (!user?.is_super_admin || !user.mfa_enabled_at || !user.mfa_totp_secret_encrypted) return "step-up-failed";
-  const secret = openSecret(user.mfa_totp_secret_encrypted, "totp");
-  if (!verifyTotpCode(secret, confirmation.totpCode)) return "step-up-failed";
-
-  const tenant = await findTenantById(db, tenantId);
-  if (!tenant || tenant.status === "archived") return "not-found";
-  if (tenant.slug !== confirmation.confirmSlug.trim().toLowerCase()) return "confirm-mismatch";
-
-  return withTransaction(async (client) => {
-    const archived = await archiveTenant(client, tenantId);
-    if (!archived) return "not-found" as const;
-    const revokedSessions = await revokeSessionsForTenant(client, tenantId);
-    const revokedInvites = await queryOne<{ count: number }>(
-      client,
-      `WITH updated AS (
-         UPDATE invitations SET status = 'revoked'
-         WHERE tenant_id = $1 AND status IN ('pending', 'sent', 'delivered', 'failed')
-         RETURNING id
-       ) SELECT count(*)::int AS count FROM updated`,
-      [tenantId]
-    );
-    await writeAuditEvent(client, {
-      tenantId,
-      actorPlatformUserId: actor.platformUserId,
-      action: "tenant.archive",
-      targetType: "tenant",
-      targetId: tenantId,
-      metadata: { revokedSessions, revokedInvites: revokedInvites?.count ?? 0 }
-    });
-    return "archived" as const;
-  });
 }
 
 export type OwnerPasswordResetResult =

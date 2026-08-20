@@ -172,3 +172,14 @@ Only an event admin can request a full export. A background job streams tenant o
 **Decision:** Every event has a required event date. The photo window opens 7 days before it and lasts 90 days; outside the window upload intents are rejected with actionable messages. Past the window the album is *flagged for takedown* — a red flag in the super-admin Accounts tab — and deletion stays a manual, TOTP-confirmed super-admin action, never automatic. Deletion is a *blank-slate purge*: photo and export objects are removed from storage first, then photos, invitations, exports, and all non-owner memberships; every tenant session is revoked. The tenant, its slug, the event row, and the owner account survive; the event date is cleared, so the admin must set a fresh date (opening a new window) before uploads reopen. Events without a date (legacy or freshly purged) keep uploads closed and fall back to tenant creation + 90 days for the flag, which only shows while content remains. The policy is stated in the admin's event settings and on the guest upload screen.
 
 **Consequence:** Retention is enforceable and reversible in exactly one direction — content is unrecoverable after purge (other than off-platform backups), while accounts and album addresses persist for reuse.
+
+
+## ADR-008: Archive removed; takedowns are purge and account deletion
+
+**Status:** Accepted (supersedes the archive flow assumed by ADR-001's admin surface)
+
+**Context:** With ADR-007's blank-slate purge and full account deletion, archiving — a reversible freeze that kept all content in storage — no longer had a user: albums are event-scoped and short-lived, and every real takedown case wants content gone, not frozen.
+
+**Decision:** The archive action, its endpoint, and the separate Tenants tab are removed. The super-admin portal is a single Accounts console: provisioning, per-account inspection, owner password reset, album purge, and account deletion. The `archived` tenant status remains in the schema as a defensive dead-state — legacy rows stay unreachable — but nothing sets it.
+
+**Consequence:** There is no non-destructive takedown anymore; a dispute hold would have to be handled by rotating the access code (locking guests out) or off-platform backup before purge.

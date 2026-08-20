@@ -22,10 +22,10 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant is resolved server-side from the album slug (or located from email + code at the marketing root), and a client-supplied tenant id is never an authority (ADR-005).
 - Store invite tokens, session tokens, and passwords only as strong one-way hashes. Access codes keep the authoritative hash for verification but are additionally stored sealed so the event admin can always view the current code (ADR-006). Never log any of them.
 - Guest sessions expire after 24 hours and use `HttpOnly`, `Secure`, `SameSite=Lax`, host-only cookies.
-- Friends can read the album and manage only their own uploads. Event admins can manage only their tenant. Only super-admins provision/archive tenants; only event admins can request full-album exports.
+- Friends can read the album and manage only their own uploads. Event admins can manage only their tenant. Only super-admins provision tenants and perform takedowns (album purge, account deletion — ADR-007/008); only event admins can request full-album exports.
 - Resize in the browser to at most 1920 px before upload, but independently verify MIME type, dimensions, and byte size server-side.
 - Upload through short-lived signed object-storage URLs. Object keys are generated server-side and tenant-prefixed.
-- Archived albums are read-only and reject login, uploads, invites, and mutations.
+- The `archived` tenant status is a defensive dead-state: such rows are unreachable and reject login and mutations, but nothing sets the status anymore (ADR-008 removed archiving in favor of purge + account deletion).
 - Retention (ADR-007): the event date is required; uploads only within [event − 7 days, +90 days]; past the window the album is flagged for manual, TOTP-confirmed super-admin purge that keeps the tenant, event row, and owner but permanently removes content and storage objects.
 - Write audit events for login outcomes, member/invite changes, access-code rotation, export, archive, and privileged actions.
 

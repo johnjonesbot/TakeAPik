@@ -2,7 +2,6 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { closePool, getPool } from "@/lib/db";
 import { findEventByTenant } from "@/lib/repositories/events";
 import { disableMembership, findMembershipById, listMemberships } from "@/lib/repositories/memberships";
-import { archiveTenant } from "@/lib/repositories/tenants";
 import { lookupTenantBySlug } from "@/services/tenant-context";
 import { provisionTestTenant, resetHelperState, truncateAll } from "./helpers";
 
@@ -58,7 +57,9 @@ describe("tenant isolation", () => {
     expect(active.kind).toBe("tenant");
     if (active.kind === "tenant") expect(active.context.tenantId).toBe(a.tenant.id);
 
-    await archiveTenant(getPool(), a.tenant.id);
+    // The archive feature was removed; the status remains a defensive dead-state
+  // that must stay unreachable for any legacy rows.
+  await getPool().query(`UPDATE tenants SET status = 'archived', archived_at = now() WHERE id = $1`, [a.tenant.id]);
     const archived = await lookupTenantBySlug(a.tenant.slug);
     const missing = await lookupTenantBySlug("no-such-album");
     const invalid = await lookupTenantBySlug("Not A Slug!");
