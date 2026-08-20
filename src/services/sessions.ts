@@ -29,9 +29,17 @@ export interface IssueSessionInput {
   userAgentHash?: string;
 }
 
+/**
+ * Member sessions (event admins and friends) last this long: real events run
+ * all day, and nobody should wrestle passwords mid-party. Super-admin
+ * sessions keep the configured SESSION_TTL_HOURS.
+ */
+export const MEMBER_SESSION_TTL_HOURS = 18;
+
 export async function issueSession(db: Queryable, input: IssueSessionInput): Promise<IssuedSession> {
   const token = generateOpaqueToken();
-  const ttlMs = getEnv().SESSION_TTL_HOURS * 60 * 60 * 1000;
+  const ttlHours = input.membershipId ? MEMBER_SESSION_TTL_HOURS : getEnv().SESSION_TTL_HOURS;
+  const ttlMs = ttlHours * 60 * 60 * 1000;
   const session = await createSessionRow(db, {
     ...input,
     tokenHash: hashToken(token),

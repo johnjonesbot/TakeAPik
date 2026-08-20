@@ -50,6 +50,6 @@ export async function POST(request: NextRequest) {
   }
 
   const response = jsonSuccess({ actor: { kind: tenant ? "admin" : "super-admin" } }, requestId);
-  response.cookies.set(SESSION_COOKIE_NAME, result.session.token, sessionCookieOptions());
+  response.cookies.set(SESSION_COOKIE_NAME, result.session.token, sessionCookieOptions(result.session.session.expires_at));
   return response;
 }

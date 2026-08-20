@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { ShareAlbumButton } from "@/components/admin/share-album-button";
 
 interface Settings {
   name: string;
@@ -128,9 +129,12 @@ export function EventSettings() {
           the album. Never share your own password; that&apos;s only for signing in here.
         </p>
         {settings.accessCode ? (
-          <p className="rotated-code" role="status">
-            Current code: <strong>{settings.accessCode}</strong> — share it with any guest, any time.
-          </p>
+          <>
+            <p className="rotated-code" role="status">
+              Current code: <strong>{settings.accessCode}</strong> — share it with any guest, any time.
+            </p>
+            <ShareAlbumButton eventName={settings.name} accessCode={settings.accessCode} />
+          </>
         ) : (
           <p className="panel-note">
             Your current code was set before codes became viewable here. It still works — rotate once and

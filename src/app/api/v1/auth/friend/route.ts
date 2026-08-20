@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       return jsonError("UNAUTHENTICATED", "Email or access code is incorrect", { requestId });
     }
     const response = jsonSuccess({ slug: result.slug }, requestId);
-    response.cookies.set(SESSION_COOKIE_NAME, result.session.token, sessionCookieOptions());
+    response.cookies.set(SESSION_COOKIE_NAME, result.session.token, sessionCookieOptions(result.session.session.expires_at));
     return response;
   }
 
@@ -57,6 +57,6 @@ export async function POST(request: NextRequest) {
     return jsonError("UNAUTHENTICATED", "Email or access code is incorrect", { requestId });
   }
   const response = jsonSuccess({ slug: located.slug }, requestId);
-  response.cookies.set(SESSION_COOKIE_NAME, located.session.token, sessionCookieOptions());
+  response.cookies.set(SESSION_COOKIE_NAME, located.session.token, sessionCookieOptions(located.session.session.expires_at));
   return response;
 }

@@ -11,14 +11,18 @@ export interface SessionCookieOptions {
   // No `domain`: host-only cookies keep one album's session off sibling subdomains.
 }
 
-export function sessionCookieOptions(): SessionCookieOptions {
+/** Cookie lifetime mirrors the session row's server-side expiry (per-role TTLs). */
+export function sessionCookieOptions(expiresAt?: Date): SessionCookieOptions {
   const env = getEnv();
+  const maxAge = expiresAt
+    ? Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
+    : env.SESSION_TTL_HOURS * 60 * 60;
   return {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: env.SESSION_TTL_HOURS * 60 * 60
+    maxAge
   };
 }
 

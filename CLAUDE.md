@@ -21,7 +21,7 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Every tenant-owned database query includes `tenant_id`, even when querying by globally unique ID.
 - Guest login requires a member email match and the event's eight-digit code (ADR-003); the tenant is resolved server-side from the album slug (or located from email + code at the marketing root), and a client-supplied tenant id is never an authority (ADR-005).
 - Store invite tokens, session tokens, and passwords only as strong one-way hashes. Access codes keep the authoritative hash for verification but are additionally stored sealed so the event admin can always view the current code (ADR-006). Never log any of them.
-- Guest sessions expire after 24 hours and use `HttpOnly`, `Secure`, `SameSite=Lax`, host-only cookies.
+- Member sessions (friends and event admins) last 18 hours — events run all day — while super-admin sessions keep the configured `SESSION_TTL_HOURS`. All session cookies are `HttpOnly`, `Secure`, `SameSite=Lax`, host-only.
 - Friends can read the album and manage only their own uploads. Event admins can manage only their tenant. Only super-admins provision tenants and perform takedowns (album purge, account deletion — ADR-007/008); only event admins can request full-album exports.
 - Resize in the browser to at most 1920 px before upload, but independently verify MIME type, dimensions, and byte size server-side.
 - Upload through short-lived signed object-storage URLs. Object keys are generated server-side and tenant-prefixed.

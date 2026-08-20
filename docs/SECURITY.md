@@ -19,7 +19,7 @@ Private photographs, guest emails, admin credentials, access codes, session/invi
 - Hash admin passwords with Argon2id using OWASP-current parameters; enforce 12+ characters and allow password managers/paste.
 - Generate codes with a cryptographically secure RNG, preserving leading zeroes. The keyed slow hash stays authoritative for verification; additionally the current code is stored sealed (app-secret encryption) so the event admin's settings page can always display it (ADR-006). It is decrypted only for the authenticated event admin and never logged.
 - Generate 256-bit random session/invite tokens and persist only SHA-256/HMAC hashes with a server pepper.
-- Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`, host-only.
+- Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/`, host-only; `Max-Age` mirrors the server-side session expiry (18 h for friends and event admins, `SESSION_TTL_HOURS` for super-admins).
 - Rotate/revoke sessions on privilege changes, password change, membership disable, access-code rotation (policy choice), and archive.
 - Use generic login failures and constant-behavior comparisons to limit account/event enumeration.
 - Guest login is member email + eight-digit access code (ADR-003); both must match the tenant resolved from the album slug (or located server-side from email + code at the marketing root — ADR-005), and the code is verified with a keyed slow hash even when the email is unknown. Product decision: invitation and onboarding emails deliver both the personal link and the code, so a compromised guest mailbox grants album access for that member — the mailbox is treated as the trust anchor, as with any emailed credential.
