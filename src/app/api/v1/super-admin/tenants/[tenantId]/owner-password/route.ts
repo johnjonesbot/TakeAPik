@@ -26,5 +26,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ te
   if (result.outcome === "not-found") return jsonError("NOT_FOUND", "Tenant not found", { requestId });
   // The temporary password crosses the wire exactly once and is never stored
   // in plaintext or logged.
-  return jsonSuccess({ ownerEmail: result.ownerEmail, temporaryPassword: result.temporaryPassword }, requestId);
+  return jsonSuccess(
+    { ownerEmail: result.ownerEmail, temporaryPassword: result.temporaryPassword, emailSent: result.emailSent },
+    requestId
+  );
 }

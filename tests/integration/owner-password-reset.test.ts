@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { closePool, getPool } from "@/lib/db";
+import { setMailerForTesting, type MailMessage } from "@/lib/mailer";
 import type { RateLimiter } from "@/lib/rate-limit";
 import { sealSecret } from "@/lib/secret-box";
 import { generateTotpSecret, totpCode } from "@/lib/totp";
@@ -24,13 +25,26 @@ async function makeSuperAdmin(): Promise<{ actor: SuperAdminActor; totpSecret: s
   };
 }
 
+class FakeMailer {
+  sent: MailMessage[] = [];
+  async send(message: MailMessage) {
+    this.sent.push(message);
+    return { messageId: `fake-${this.sent.length}` };
+  }
+}
+
 describe("super-admin owner password reset", () => {
+  let mailer: FakeMailer;
+
   beforeEach(async () => {
     await truncateAll();
     resetHelperState();
+    mailer = new FakeMailer();
+    setMailerForTesting(mailer);
   });
 
   afterAll(async () => {
+    setMailerForTesting(undefined);
     await closePool();
   });
 
@@ -41,9 +55,15 @@ describe("super-admin owner password reset", () => {
     const result = await resetOwnerPasswordAsSuperAdmin(actor, provisioned.tenant.id, {
       totpCode: totpCode(totpSecret)
     });
-    expect(result).toMatchObject({ outcome: "reset" });
+    expect(result).toMatchObject({ outcome: "reset", emailSent: true });
     if (result.outcome !== "reset") return;
     expect(result.temporaryPassword.length).toBeGreaterThanOrEqual(12);
+
+    // The owner is emailed their new credentials immediately.
+    const resetMail = mailer.sent.find((mail) => mail.subject.includes("password was reset"));
+    expect(resetMail?.to).toBe(provisioned.owner.email);
+    expect(resetMail?.text).toContain(result.temporaryPassword);
+    expect(resetMail?.text).toContain(`/a/${provisioned.tenant.slug}/admin`);
 
     const lookup = await lookupTenantBySlug(provisioned.tenant.slug);
     expect(lookup.kind).toBe("tenant");

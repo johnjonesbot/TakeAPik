@@ -47,7 +47,7 @@ export function AccountsManager() {
   const [deleting, setDeleting] = useState(false);
   const [resetTarget, setResetTarget] = useState<AdminAccount | null>(null);
   const [resetting, setResetting] = useState(false);
-  const [resetResult, setResetResult] = useState<{ ownerEmail: string; temporaryPassword: string } | null>(null);
+  const [resetResult, setResetResult] = useState<{ ownerEmail: string; temporaryPassword: string; emailSent: boolean } | null>(null);
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/v1/super-admin/accounts");
@@ -101,7 +101,7 @@ export function AccountsManager() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ totpCode: formData.get("totpCode") })
     });
-    const payload = (await response.json()) as Envelope<{ ownerEmail: string; temporaryPassword: string }>;
+    const payload = (await response.json()) as Envelope<{ ownerEmail: string; temporaryPassword: string; emailSent: boolean }>;
     if (response.ok && payload.data) {
       setResetTarget(null);
       setResetResult(payload.data);
@@ -385,7 +385,9 @@ export function AccountsManager() {
               <strong>{resetResult.temporaryPassword}</strong>
             </p>
             <p style={{ margin: "6px 0 0", fontSize: 12 }}>
-              Shown once — pass it to the host now and have them change it after signing in.
+              {resetResult.emailSent
+                ? "The host received an email with the new password and sign-in instructions."
+                : "Warning: the email failed to send — pass this to the host yourself; it is shown once."}
             </p>
           </div>
         ) : null}

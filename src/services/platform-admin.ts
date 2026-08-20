@@ -4,12 +4,14 @@ import { hashPassword } from "@/lib/passwords";
 import { openSecret } from "@/lib/secret-box";
 import { verifyTotpCode } from "@/lib/totp";
 import { findPlatformUserByEmail, findPlatformUserById } from "@/lib/repositories/platform-users";
+import { findEventByTenant } from "@/lib/repositories/events";
 import { findTenantById } from "@/lib/repositories/tenants";
 import { revokeSessionsForPlatformUser, revokeSessionsForTenant } from "@/lib/repositories/sessions";
 import { appUrl } from "@/lib/hosts";
 import { getLogger } from "@/lib/logger";
 import { getMailer } from "@/lib/mailer";
 import { computeRetention } from "@/lib/retention";
+import { buildPasswordResetEmail } from "@/lib/password-reset-email";
 import { buildWelcomeEmail } from "@/lib/welcome-email";
 import { getStorage } from "@/lib/storage";
 import { writeAuditEvent } from "@/services/audit";
@@ -138,7 +140,7 @@ export async function provisionTenantAsSuperAdmin(
 }
 
 export type OwnerPasswordResetResult =
-  | { outcome: "reset"; ownerEmail: string; temporaryPassword: string }
+  | { outcome: "reset"; ownerEmail: string; temporaryPassword: string; emailSent: boolean }
   | { outcome: "step-up-failed" }
   | { outcome: "forbidden-target" }
   | { outcome: "not-found" };
@@ -172,7 +174,7 @@ export async function resetOwnerPasswordAsSuperAdmin(
   const temporaryPassword = randomBytes(12).toString("base64url");
   const passwordHash = await hashPassword(temporaryPassword);
 
-  return withTransaction(async (client) => {
+  await withTransaction(async (client) => {
     await query(client, `UPDATE platform_users SET password_hash = $2, updated_at = now() WHERE id = $1`, [
       owner.id,
       passwordHash
@@ -186,8 +188,33 @@ export async function resetOwnerPasswordAsSuperAdmin(
       targetId: owner.id,
       metadata: { revokedSessions }
     });
-    return { outcome: "reset" as const, ownerEmail: owner.email, temporaryPassword };
   });
+
+  // The owner gets their new credentials by email immediately; a mail outage
+  // never undoes the reset — the same password is shown once to the
+  // super-admin, whose UI reports the send status.
+  let emailSent = true;
+  try {
+    const event = await findEventByTenant(db, tenantId);
+    await getMailer().send({
+      to: owner.email,
+      ...buildPasswordResetEmail({
+        ownerName: owner.display_name,
+        ownerEmail: owner.email,
+        eventName: event?.name ?? null,
+        adminUrl: appUrl(`/a/${tenant.slug}/admin`),
+        temporaryPassword
+      })
+    });
+  } catch (error) {
+    emailSent = false;
+    getLogger().warn("password-reset email failed", {
+      tenantId,
+      error: error instanceof Error ? error.message : "unknown"
+    });
+  }
+
+  return { outcome: "reset" as const, ownerEmail: owner.email, temporaryPassword, emailSent };
 }
 
 
