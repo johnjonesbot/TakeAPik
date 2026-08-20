@@ -100,6 +100,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 | `PATCH` | `/api/v1/super-admin/account` | Super-admin's own email and/or password; current password required. Password change revokes other sessions |
 | `GET` | `/api/v1/super-admin/accounts` | All admin accounts with album, event, and retention-flag state (ADR-007) |
 | `POST` | `/api/v1/super-admin/tenants/{id}/purge` | Step-up auth; blank-slate album deletion — permanently removes photos (storage included), guests, invitations, exports; keeps tenant, event row, and owner (ADR-007) |
+| `POST` | `/api/v1/super-admin/accounts/{userId}/delete` | Typed-email confirm + step-up auth; full account teardown for emptied albums — deletes the tenant (freeing its slug) and the platform account. Refuses super-admin targets and albums with remaining content |
 
 Provisioning generates a candidate slug from lowercase initials. Try `jj`, then atomic unique candidates `jj1a`, `jj1b` … without a check-then-insert race. The database unique constraint is authoritative; retry collisions in a bounded transaction.
 

@@ -361,3 +361,93 @@ export async function purgeAlbumContentAsSuperAdmin(
     return { outcome: "purged" as const, deletedPhotos: photos?.count ?? 0, deletedObjects };
   });
 }
+
+
+export type AccountDeleteResult =
+  | { outcome: "deleted"; freedSlug: string | null }
+  | { outcome: "step-up-failed" }
+  | { outcome: "confirm-mismatch" }
+  | { outcome: "forbidden-target" }
+  | { outcome: "content-present" }
+  | { outcome: "not-found" };
+
+/**
+ * Full teardown for mis-provisioned or test accounts (extends ADR-007): after
+ * the album has been emptied, the super-admin can remove every remaining
+ * trace — the tenant row (cascading the event, owner membership, and any
+ * residue) and the platform account itself. The slug becomes available for
+ * future provisioning. Requires the exact account email retyped plus a fresh
+ * TOTP code; refuses super-admin targets and albums that still hold content
+ * (Delete album comes first). Audit rows survive with actor/tenant anonymized
+ * by the schema's SET NULL rules, plus one account.delete event naming what
+ * was removed.
+ */
+export async function deleteAdminAccountAsSuperAdmin(
+  actor: SuperAdminActor,
+  userId: string,
+  confirmation: { confirmEmail: string; totpCode: string }
+): Promise<AccountDeleteResult> {
+  const db = getPool();
+  const superAdmin = await findPlatformUserById(db, actor.platformUserId);
+  if (!superAdmin?.is_super_admin || !superAdmin.mfa_enabled_at || !superAdmin.mfa_totp_secret_encrypted) {
+    return { outcome: "step-up-failed" };
+  }
+  const secret = openSecret(superAdmin.mfa_totp_secret_encrypted, "totp");
+  if (!verifyTotpCode(secret, confirmation.totpCode)) return { outcome: "step-up-failed" };
+
+  const target = await findPlatformUserById(db, userId);
+  if (!target) return { outcome: "not-found" };
+  if (target.is_super_admin || target.id === actor.platformUserId) return { outcome: "forbidden-target" };
+  if (confirmation.confirmEmail.trim().toLowerCase() !== target.email.toLowerCase()) {
+    return { outcome: "confirm-mismatch" };
+  }
+
+  const tenant = await queryOne<{ id: string; slug: string }>(
+    db,
+    `SELECT id, slug FROM tenants WHERE owner_user_id = $1`,
+    [target.id]
+  );
+
+  if (tenant) {
+    const content = await queryOne<{ photos: number; extra_members: number }>(
+      db,
+      `SELECT
+         (SELECT count(*)::int FROM photos WHERE tenant_id = $1) AS photos,
+         (SELECT count(*)::int FROM memberships WHERE tenant_id = $1 AND platform_user_id IS DISTINCT FROM $2) AS extra_members`,
+      [tenant.id, target.id]
+    );
+    if ((content?.photos ?? 0) > 0 || (content?.extra_members ?? 0) > 0) {
+      return { outcome: "content-present" };
+    }
+    // Belt and braces: the album should already be empty, but sweep any
+    // stray storage objects before their DB references disappear.
+    const keys = await query<{ object_key: string }>(
+      db,
+      `SELECT object_key FROM photos WHERE tenant_id = $1
+       UNION
+       SELECT object_key FROM exports WHERE tenant_id = $1 AND object_key IS NOT NULL`,
+      [tenant.id]
+    );
+    const storage = getStorage();
+    for (const { object_key } of keys) {
+      try {
+        await storage.deleteObject(object_key);
+      } catch {
+        // Already gone is fine.
+      }
+    }
+  }
+
+  return withTransaction(async (client) => {
+    if (tenant) await query(client, `DELETE FROM tenants WHERE id = $1`, [tenant.id]);
+    await query(client, `DELETE FROM platform_users WHERE id = $1`, [target.id]);
+    await writeAuditEvent(client, {
+      actorPlatformUserId: actor.platformUserId,
+      action: "account.delete",
+      targetType: "platform_user",
+      targetId: target.id,
+      metadata: { email: target.email, freedSlug: tenant?.slug ?? null }
+    });
+    return { outcome: "deleted" as const, freedSlug: tenant?.slug ?? null };
+  });
+}

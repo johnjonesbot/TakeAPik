@@ -32,6 +32,8 @@ export function AccountsManager() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [purgeTarget, setPurgeTarget] = useState<AdminAccount | null>(null);
   const [purging, setPurging] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminAccount | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState("");
 
   const refresh = useCallback(async () => {
@@ -66,6 +68,32 @@ export function AccountsManager() {
       setMessage(payload.error?.message ?? "Delete failed");
     }
     setPurging(false);
+  }
+
+  async function deleteAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    const formData = new FormData(event.currentTarget);
+    const response = await fetch(`/api/v1/super-admin/accounts/${deleteTarget.userId}/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmEmail: formData.get("confirmEmail"), totpCode: formData.get("totpCode") })
+    });
+    const payload = (await response.json()) as Envelope<{ deleted: boolean; freedSlug: string | null }>;
+    if (response.ok && payload.data) {
+      setMessage(
+        payload.data.freedSlug
+          ? `Deleted ${deleteTarget.email} and its album — the address /a/${payload.data.freedSlug} is available again.`
+          : `Deleted ${deleteTarget.email}.`
+      );
+      setDeleteTarget(null);
+      setExpanded(null);
+      await refresh();
+    } else {
+      setMessage(payload.error?.message ?? "Account delete failed");
+    }
+    setDeleting(false);
   }
 
   const term = search.trim().toLowerCase();
@@ -180,10 +208,34 @@ export function AccountsManager() {
                       Delete album
                     </button>
                   ) : account.tenant ? (
-                    <p className="panel-note">
-                      Blank slate — nothing to delete. The owner signs in, sets a new event date, and starts over.
-                    </p>
-                  ) : null}
+                    <>
+                      <p className="panel-note">
+                        Blank slate — nothing left in the album. The owner signs in, sets a new event date, and
+                        starts over. Or remove every remaining trace:
+                      </p>
+                      <button
+                        type="button"
+                        className="ghost danger"
+                        onClick={() => {
+                          setMessage("");
+                          setDeleteTarget(account);
+                        }}
+                      >
+                        Delete account
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="ghost danger"
+                      onClick={() => {
+                        setMessage("");
+                        setDeleteTarget(account);
+                      }}
+                    >
+                      Delete account
+                    </button>
+                  )}
                 </div>
               ) : null}
             </li>
@@ -207,6 +259,36 @@ export function AccountsManager() {
           <div className="upload-actions">
             <button type="button" className="ghost" onClick={() => setPurgeTarget(null)}>Cancel</button>
             <button type="submit" className="ghost danger" disabled={purging}>{purging ? "Deleting…" : "Delete this album permanently"}</button>
+          </div>
+        </form>
+      ) : null}
+      {deleteTarget ? (
+        <form className="archive-confirm" onSubmit={(event) => void deleteAccount(event)}>
+          <p className="panel-note">
+            <strong>Are you sure?</strong> This permanently deletes the admin account{" "}
+            <strong>{deleteTarget.email}</strong>
+            {deleteTarget.tenant ? (
+              <>
+                {" "}and its album — the address <strong>/a/{deleteTarget.tenant.slug}</strong> is released and may be
+                assigned to a future album
+              </>
+            ) : null}
+            . Nothing about this account can be recovered afterward. Type the account&apos;s email and a fresh
+            authenticator code to confirm.
+          </p>
+          <div className="field">
+            <label htmlFor="delete-confirm-email">Account email</label>
+            <input id="delete-confirm-email" name="confirmEmail" type="email" placeholder={deleteTarget.email} required />
+          </div>
+          <div className="field">
+            <label htmlFor="delete-totp">Authenticator code</label>
+            <input id="delete-totp" name="totpCode" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required />
+          </div>
+          <div className="upload-actions">
+            <button type="button" className="ghost" onClick={() => setDeleteTarget(null)}>Cancel</button>
+            <button type="submit" className="ghost danger" disabled={deleting}>
+              {deleting ? "Deleting…" : "Delete this account permanently"}
+            </button>
           </div>
         </form>
       ) : null}
