@@ -9,14 +9,14 @@ import { UploadForm } from "@/components/upload-form";
  * gallery, and a published photo drops straight into view — no tab switch,
  * no dead-end "see the album" link.
  */
-export function AlbumView() {
+export function AlbumView({ isAdmin }: { isAdmin: boolean }) {
   const [galleryVersion, setGalleryVersion] = useState(0);
   return (
     <>
       <div className="album-upload-card">
         <UploadForm onPublished={() => setGalleryVersion((version) => version + 1)} />
       </div>
-      <PhotoGallery key={galleryVersion} />
+      <PhotoGallery key={galleryVersion} canDownload={isAdmin} />
     </>
   );
 }

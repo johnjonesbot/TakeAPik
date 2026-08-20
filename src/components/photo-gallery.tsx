@@ -23,6 +23,8 @@ interface PhotoGalleryProps {
   emptyMessage?: string;
   /** Render controls (edit/delete) under a photo; used by My uploads. */
   renderExtras?: (photo: GalleryPhoto, refresh: () => void) => React.ReactNode;
+  /** Show a download button in the lightbox (album admins). */
+  canDownload?: boolean;
 }
 
 type SortOrder = "desc" | "asc";
@@ -37,8 +39,34 @@ function storedOrder(): SortOrder {
 export function PhotoGallery({
   endpoint = "/api/v1/photos",
   emptyMessage = "No photos yet — be the first to add one.",
-  renderExtras
+  renderExtras,
+  canDownload = false
 }: PhotoGalleryProps) {
+  const [downloading, setDownloading] = useState(false);
+
+  async function downloadPhoto(photo: GalleryPhoto) {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      // Fetch the signed image as a blob so the browser saves it instead of
+      // navigating to it; on iOS this opens the image full-screen to save.
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `takeapik-${photo.id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+    } catch {
+      window.open(photo.url, "_blank", "noopener");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "idle" | "error" | "done">("loading");
@@ -204,6 +232,19 @@ export function PhotoGallery({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={viewing.url} alt={viewing.description ?? "Event photo"} onClick={(event) => event.stopPropagation()} />
           {viewing.description ? <p className="lightbox-caption">{viewing.description}</p> : null}
+          {canDownload ? (
+            <button
+              type="button"
+              className="lightbox-download"
+              disabled={downloading}
+              onClick={(event) => {
+                event.stopPropagation();
+                void downloadPhoto(viewing);
+              }}
+            >
+              {downloading ? "Saving…" : "↓ Save photo"}
+            </button>
+          ) : null}
         </div>
       ) : null}
       {state === "error" ? (

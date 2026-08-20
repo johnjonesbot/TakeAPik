@@ -46,7 +46,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       <TenantNav albumName={tenant.context.displayName} slug={slug} isAdmin={authorized.actor.kind === "admin"} />
       <section className="portal-body portal-body-wide">
         <h1 className="portal-heading">The album</h1>
-        <AlbumView />
+        <AlbumView isAdmin={authorized.actor.kind === "admin"} />
       </section>
     </main>
   );

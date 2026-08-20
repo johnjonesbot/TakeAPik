@@ -193,6 +193,8 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .lightbox img { border-radius: 12px; cursor: default; max-height: 86svh; max-width: 100%; object-fit: contain; }
 .lightbox-caption { color: var(--muted); margin: 0; max-width: 640px; overflow-wrap: anywhere; text-align: center; }
 .lightbox-close { background: none; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); cursor: pointer; font-size: 16px; line-height: 1; padding: 8px 12px; position: absolute; right: 16px; top: 16px; }
+.lightbox-download { background: linear-gradient(135deg, #ff9271, #ff684f); border: 0; border-radius: 12px; bottom: 20px; color: #210a05; cursor: pointer; font-size: 15px; font-weight: 700; padding: 12px 18px; position: absolute; right: 20px; }
+.lightbox-download:disabled { opacity: 0.6; }
 
 /* Upload flow */
 .upload-flow { display: grid; gap: 18px; max-width: 560px; }
