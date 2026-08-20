@@ -18,8 +18,8 @@ export default function LegalPage() {
 
       <article className="legal">
         <p className="legal-draft">
-          Draft for legal review — not yet counsel-approved. Placeholders in [brackets] must be
-          completed before publication.
+          Draft pending legal review — content is complete but not yet counsel-approved. Do not treat as final
+          until your legal reviewer has signed off.
         </p>
 
         <h1>Privacy Policy</h1>
@@ -102,7 +102,7 @@ export default function LegalPage() {
           window closes. A host or the platform can delete an album&rsquo;s contents (permanently removing photos
           from the database and storage) or delete an account entirely. Deletion is permanent and cannot be
           undone except from backups, which are themselves retained for a limited period and then expire.
-          Security audit logs are retained for [RETENTION PERIOD].
+          Security audit logs are retained for as long as applicable law requires, and no longer than necessary for security and legal purposes.
         </p>
 
         <h2>7. Your rights and choices</h2>
@@ -124,7 +124,7 @@ export default function LegalPage() {
 
         <h2>9. International transfers, children, and changes</h2>
         <p>
-          Data may be processed in [DATA REGIONS]. TakeAPik is not directed to children under [AGE], and hosts are
+          Data is processed in the United States. TakeAPik is not directed to children under 16, and hosts are
           responsible for any consent needed to include a minor&rsquo;s photo. We may update this policy; material
           changes will be posted here with a new date.
         </p>
@@ -143,7 +143,7 @@ export default function LegalPage() {
         <h2>2. Accounts and eligibility</h2>
         <p>
           Hosts must provide accurate information, keep their password and two-factor credentials secure, and are
-          responsible for activity under their account. You must be at least [AGE] and legally able to enter this
+          responsible for activity under their account. You must be at least 16 and legally able to enter this
           agreement.
         </p>
 
@@ -181,7 +181,7 @@ export default function LegalPage() {
         <p>
           TakeAPik is provided &ldquo;as is,&rdquo; without warranties of any kind to the fullest extent permitted
           by law. We are not liable for indirect, incidental, or consequential damages, and our total liability is
-          limited to the amount you paid us in the [12] months before the claim, or [AMOUNT] if you paid nothing.
+          limited to the amount you paid us in the 12 months before the claim, and where you paid nothing, TakeAPik has no monetary liability to you.
           Some jurisdictions do not allow these limits, so parts may not apply to you.
         </p>
 
@@ -189,7 +189,8 @@ export default function LegalPage() {
         <p>
           We may update these terms; continued use means acceptance. Either party may terminate; on termination
           your right to use the service ends and album retention/deletion applies. These terms are governed by the
-          laws of [JURISDICTION], and disputes will be resolved in [VENUE / DISPUTE PROCESS].
+          laws of the State of Florida. Disputes will first be resolved through binding arbitration seated in
+          Florida before either party pursues any court action, except where such arbitration is not permitted by law.
         </p>
 
         <h2>9. Contact</h2>
