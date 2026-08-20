@@ -10,6 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "postbuild": "cp -r public .next/standalone/ 2>/dev/null; mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/ 2>/dev/null; true",
+    "prestart": "tsx scripts/migrate.ts",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
