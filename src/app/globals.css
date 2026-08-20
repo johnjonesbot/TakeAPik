@@ -92,7 +92,7 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 /* Album cover backdrop: the admin's cover photo, heavily blurred at 20%
    opacity over the dark base. Content shells stack above it. */
 .album-backdrop { inset: 0; overflow: hidden; pointer-events: none; position: fixed; z-index: 0; }
-.album-backdrop img { filter: blur(64px) saturate(1.1); height: 100%; object-fit: cover; opacity: 0.2; transform: scale(1.15); width: 100%; }
+.album-backdrop img { filter: blur(25px) saturate(1.1); height: 100%; object-fit: cover; opacity: 0.4; transform: scale(1.1); width: 100%; }
 .portal-shell, .landing-shell { position: relative; z-index: 1; }
 
 /* Portal shells (album, admin, super-admin) */
