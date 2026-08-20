@@ -75,7 +75,7 @@ export function AccountsManager() {
         ownerDisplayName: formData.get("ownerDisplayName"),
         eventName: formData.get("eventName"),
         eventStartsAt: new Date(`${formData.get("eventStartsAt")}T12:00:00Z`).toISOString(),
-        timezone: formData.get("timezone") || undefined
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
     });
     const payload = (await response.json()) as Envelope<{ provisioned: Provisioned }>;
@@ -188,10 +188,6 @@ export function AccountsManager() {
         <div className="field">
           <label htmlFor="p-event-date">Event date (required)</label>
           <input id="p-event-date" name="eventStartsAt" type="date" required />
-        </div>
-        <div className="field">
-          <label htmlFor="p-tz">Timezone (optional)</label>
-          <input id="p-tz" name="timezone" maxLength={64} placeholder="America/Managua" />
         </div>
         <button type="submit">Provision</button>
         {provisioned ? (

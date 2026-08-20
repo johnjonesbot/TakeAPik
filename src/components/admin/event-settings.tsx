@@ -49,7 +49,7 @@ export function EventSettings() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: formData.get("name"),
-        timezone: formData.get("timezone"),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         startsAt: startsAt ? new Date(`${startsAt}T12:00:00Z`).toISOString() : undefined
       })
     });
@@ -100,10 +100,6 @@ export function EventSettings() {
         <div className="field">
           <label htmlFor="event-name">Event name</label>
           <input id="event-name" name="name" defaultValue={settings.name} maxLength={200} required />
-        </div>
-        <div className="field">
-          <label htmlFor="event-tz">Timezone</label>
-          <input id="event-tz" name="timezone" defaultValue={settings.timezone} maxLength={64} required />
         </div>
         <div className="field">
           <label htmlFor="event-date">Event date (required)</label>
