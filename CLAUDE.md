@@ -37,6 +37,7 @@ If a decision changes architecture, add or supersede an ADR rather than silently
 - Pass an explicit `Actor` and `TenantContext` into service methods.
 - Use cursor pagination (`created_at`, `id`) for photo feeds; never offset pagination.
 - Prefer small modules and named exports. Put browser-only code in `*.client.ts` or a `"use client"` component.
+- Every async pending state renders `<BrandLoader>` (the animated brand mark) — never bare "Loading…" text or ad-hoc spinners.
 - Add tests for authorization and tenant isolation with every protected route.
 
 ## Change workflow

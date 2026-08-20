@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BrandLoader } from "@/components/brand-loader";
 
 export interface GalleryPhoto {
   id: string;
@@ -118,7 +119,7 @@ export function PhotoGallery({
         ))}
       </div>
       <div ref={sentinel} aria-hidden="true" />
-      {state === "loading" ? <p className="gallery-status">Loading…</p> : null}
+      {state === "loading" ? <div className="gallery-status"><BrandLoader label="Loading photos" /></div> : null}
       {viewing ? (
         <div
           className="lightbox"

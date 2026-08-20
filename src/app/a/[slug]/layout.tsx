@@ -1,3 +1,4 @@
+import { AlbumBackdrop } from "@/components/album-backdrop";
 import { getAlbumCoverUrl } from "@/lib/album-cover";
 
 export const dynamic = "force-dynamic";
@@ -18,12 +19,7 @@ export default async function AlbumLayout({
   const coverUrl = await getAlbumCoverUrl(slug);
   return (
     <>
-      {coverUrl ? (
-        <div className="album-backdrop" aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={coverUrl} alt="" decoding="async" />
-        </div>
-      ) : null}
+      {coverUrl ? <AlbumBackdrop coverUrl={coverUrl} /> : null}
       {children}
     </>
   );

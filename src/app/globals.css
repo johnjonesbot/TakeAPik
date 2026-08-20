@@ -92,7 +92,19 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 /* Album cover backdrop: the admin's cover photo, heavily blurred at 20%
    opacity over the dark base. Content shells stack above it. */
 .album-backdrop { inset: 0; overflow: hidden; pointer-events: none; position: fixed; z-index: 0; }
-.album-backdrop img { filter: blur(25px) saturate(1.1); height: 100%; object-fit: cover; opacity: 0.4; transform: scale(1.1); width: 100%; }
+.album-backdrop img { filter: blur(25px) saturate(1.1); height: 100%; object-fit: cover; opacity: 0; transform: scale(1.1); transition: opacity 0.9s ease; width: 100%; }
+.album-backdrop img.is-loaded { opacity: 0.4; }
+.album-backdrop-loading { align-items: center; display: flex; inset: 0; justify-content: center; opacity: 0.5; position: absolute; }
+
+/* Brand loader: the standard pending indicator everywhere. */
+@keyframes brand-loader-spin { to { transform: rotate(360deg); } }
+@keyframes brand-loader-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1); } }
+.brand-loader { display: inline-grid; height: 56px; margin: 18px auto; place-items: center; position: relative; width: 56px; }
+.brand-loader img { animation: brand-loader-pulse 1.6s ease-in-out infinite; grid-area: 1 / 1; height: 30px; width: 30px; }
+.brand-loader-ring { animation: brand-loader-spin 1.1s linear infinite; border: 2.5px solid rgba(255, 255, 255, 0.12); border-radius: 50%; border-top-color: var(--accent); grid-area: 1 / 1; height: 100%; width: 100%; }
+.brand-loader-small { height: 38px; margin: 10px auto; width: 38px; }
+.brand-loader-small img { height: 20px; width: 20px; }
+.gallery-status .brand-loader, .portal-body .brand-loader { display: grid; }
 .portal-shell, .landing-shell { position: relative; z-index: 1; }
 
 /* Portal shells (album, admin, super-admin) */

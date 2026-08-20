@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { BrandLoader } from "@/components/brand-loader";
 import { ShareAlbumButton } from "@/components/admin/share-album-button";
 
 interface Settings {
@@ -92,7 +93,7 @@ export function EventSettings() {
     }
   }
 
-  if (!settings) return <p className="gallery-status">Loading…</p>;
+  if (!settings) return <div className="gallery-status"><BrandLoader label="Loading settings" /></div>;
 
   return (
     <div className="admin-panels">
