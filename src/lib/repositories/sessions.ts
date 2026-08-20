@@ -89,3 +89,16 @@ export async function revokeSessionsForTenant(db: Queryable, tenantId: string): 
   );
   return rows.length;
 }
+
+/** Revoke only guest (friend) sessions in a tenant, leaving admin sessions intact. */
+export async function revokeFriendSessionsForTenant(db: Queryable, tenantId: string): Promise<number> {
+  const rows = await query(
+    db,
+    `UPDATE sessions SET revoked_at = now()
+     WHERE tenant_id = $1 AND revoked_at IS NULL
+       AND membership_id IN (SELECT id FROM memberships WHERE tenant_id = $1 AND role = 'friend')
+     RETURNING id`,
+    [tenantId]
+  );
+  return rows.length;
+}

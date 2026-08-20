@@ -79,6 +79,31 @@ describe("event administration", () => {
     await expect(verifyAccessCode(event!.access_code_hash, tenant.accessCode)).resolves.toBe(false);
   });
 
+  it("rotating the access code signs out guests but keeps the admin in (audit L1)", async () => {
+    const password = "admin-password-123";
+    const tenant = await provisionTestTenant({ ownerPasswordHash: await hashPassword(password) });
+    const actor = adminActor(tenant);
+    const created = await createFriend(actor, { email: "guest@example.test", name: "Guest" });
+    if (created.outcome !== "created") throw new Error("setup failed");
+
+    const guestSession = await issueSession(getPool(), {
+      tenantId: tenant.tenant.id,
+      membershipId: created.friend.id
+    });
+    const adminSession = await issueSession(getPool(), {
+      tenantId: tenant.tenant.id,
+      membershipId: tenant.ownerMembership.id,
+      platformUserId: tenant.owner.id
+    });
+    expect(await resolveActorFromToken(guestSession.token)).not.toBeNull();
+
+    const rotated = await rotateEventAccessCode(actor, password);
+    expect(rotated.outcome).toBe("rotated");
+
+    expect(await resolveActorFromToken(guestSession.token)).toBeNull();
+    expect(await resolveActorFromToken(adminSession.token)).not.toBeNull();
+  });
+
   it("keeps the current access code visible to the admin (ADR-006)", async () => {
     const password = "admin-password-123";
     const tenant = await provisionTestTenant({ ownerPasswordHash: await hashPassword(password) });

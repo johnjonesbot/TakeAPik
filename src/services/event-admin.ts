@@ -6,6 +6,7 @@ import { findEventByTenant, rotateAccessCode } from "@/lib/repositories/events";
 import { findTenantById } from "@/lib/repositories/tenants";
 import { computeRetention, type Retention } from "@/lib/retention";
 import { findPlatformUserById } from "@/lib/repositories/platform-users";
+import { revokeFriendSessionsForTenant } from "@/lib/repositories/sessions";
 import type { EventRow } from "@/lib/repositories/types";
 import { writeAuditEvent } from "@/services/audit";
 import type { Actor } from "@/services/sessions";
@@ -118,13 +119,17 @@ export async function rotateEventAccessCode(actor: AdminActor, currentPassword: 
   return withTransaction(async (client) => {
     const event = await rotateAccessCode(client, actor.tenantId, accessCodeHash, accessCodeEncrypted);
     if (!event) return { outcome: "not-found" as const };
+    // Rotation is meant to lock out anyone with only the old code, so existing
+    // guest sessions end now; the admin's own session is preserved.
+    const revokedGuests = await revokeFriendSessionsForTenant(client, actor.tenantId);
     await writeAuditEvent(client, {
       tenantId: actor.tenantId,
       actorPlatformUserId: actor.platformUserId,
       actorMembershipId: actor.membershipId,
       action: "event.access_code.rotate",
       targetType: "event",
-      targetId: event.id
+      targetId: event.id,
+      metadata: { revokedGuestSessions: revokedGuests }
     });
     return { outcome: "rotated" as const, accessCode };
   });
