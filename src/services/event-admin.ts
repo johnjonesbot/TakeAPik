@@ -7,6 +7,8 @@ import { findTenantById } from "@/lib/repositories/tenants";
 import { computeRetention, type Retention } from "@/lib/retention";
 import { findPlatformUserById } from "@/lib/repositories/platform-users";
 import { revokeFriendSessionsForTenant } from "@/lib/repositories/sessions";
+import { findPhotoById } from "@/lib/repositories/photos";
+import { getStorage } from "@/lib/storage";
 import type { EventRow } from "@/lib/repositories/types";
 import { writeAuditEvent } from "@/services/audit";
 import type { Actor } from "@/services/sessions";
@@ -29,6 +31,8 @@ export interface EventSettings {
   accessCode: string | null;
   accessCodeLastChangedAt: string;
   coverPhotoId: string | null;
+  /** Signed URL for the current cover photo, or null when none is set. */
+  coverPhotoUrl: string | null;
 }
 
 function currentAccessCode(event: EventRow): string | null {
@@ -54,7 +58,8 @@ function toSettings(event: EventRow, tenantCreatedAt: Date): EventSettings {
     },
     accessCode: currentAccessCode(event),
     accessCodeLastChangedAt: event.access_code_last_changed_at.toISOString(),
-    coverPhotoId: event.cover_photo_id
+    coverPhotoId: event.cover_photo_id,
+    coverPhotoUrl: null
   };
 }
 
@@ -63,7 +68,19 @@ export async function getEventSettings(actor: AdminActor): Promise<EventSettings
     findEventByTenant(getPool(), actor.tenantId),
     findTenantById(getPool(), actor.tenantId)
   ]);
-  return event && tenant ? toSettings(event, tenant.created_at) : null;
+  if (!event || !tenant) return null;
+  const settings = toSettings(event, tenant.created_at);
+  if (event.cover_photo_id) {
+    const cover = await findPhotoById(getPool(), actor.tenantId, event.cover_photo_id);
+    if (cover && cover.status === "ready" && !cover.deleted_at) {
+      try {
+        settings.coverPhotoUrl = await getStorage().createSignedGetUrl(cover.object_key, 10 * 60);
+      } catch {
+        settings.coverPhotoUrl = null;
+      }
+    }
+  }
+  return settings;
 }
 
 export async function updateEventSettings(
@@ -136,6 +153,26 @@ export async function rotateEventAccessCode(actor: AdminActor, currentPassword: 
 }
 
 export type SetCoverResult = "set" | "not-found";
+
+/** Remove the album cover so the plain dark background returns. */
+export async function clearCoverPhoto(actor: AdminActor): Promise<void> {
+  await withTransaction(async (client) => {
+    await queryOne<EventRow>(
+      client,
+      `UPDATE events SET cover_photo_id = NULL, updated_at = now() WHERE tenant_id = $1 RETURNING *`,
+      [actor.tenantId]
+    );
+    await writeAuditEvent(client, {
+      tenantId: actor.tenantId,
+      actorPlatformUserId: actor.platformUserId,
+      actorMembershipId: actor.membershipId,
+      action: "member.update",
+      targetType: "event",
+      targetId: actor.tenantId,
+      metadata: { change: "cover-cleared" }
+    });
+  });
+}
 
 /** Only a ready, undeleted photo belonging to this tenant can be the cover. */
 export async function setCoverPhoto(actor: AdminActor, photoId: string): Promise<SetCoverResult> {

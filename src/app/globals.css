@@ -212,7 +212,7 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .upload-preview { display: grid; gap: 14px; }
 .upload-preview img { border: 1px solid var(--line); border-radius: 18px; max-height: 60svh; max-width: 100%; object-fit: contain; }
 .upload-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.button-link { background: linear-gradient(135deg, #ff9271, #ff684f); border-radius: 11px; color: #210a05; font-size: 14px; font-weight: 700; padding: 10px 16px; text-decoration: none; }
+.button-link { background: linear-gradient(135deg, #ff9271, #ff684f); border-radius: 11px; color: #210a05; display: inline-block; font-size: 14px; font-weight: 700; padding: 10px 16px; text-decoration: none; }
 .upload-progress { display: grid; gap: 10px; }
 .upload-bar { background: var(--glass); border: 1px solid var(--line); border-radius: 99px; height: 12px; overflow: hidden; }
 .upload-bar i { background: linear-gradient(90deg, #9d7cff, #ff805d); border-radius: 99px; display: block; height: 100%; transition: width .2s; }
@@ -267,6 +267,13 @@ button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 .cover-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; margin-bottom: 8px; }
 .cover-actions .panel-note { flex: 1; min-width: 240px; }
 .cover-upload-button { cursor: pointer; position: relative; }
+.cover-picker { display: grid; gap: 14px; justify-items: start; }
+.cover-picker .panel-note { margin: 0; }
+.cover-picker .form-status { margin: 0; text-align: left; }
+.cover-thumb { position: relative; }
+.cover-thumb img { border: 1px solid var(--line); border-radius: 14px; display: block; height: 120px; object-fit: cover; width: 180px; }
+.cover-thumb-remove { align-items: center; background: rgba(8, 3, 15, 0.82); border: 1px solid var(--line); border-radius: 50%; color: var(--ink); cursor: pointer; display: flex; height: 30px; justify-content: center; line-height: 1; position: absolute; right: -10px; top: -10px; width: 30px; }
+.cover-thumb-remove:disabled { opacity: 0.5; }
 
 /* Consolidated admin settings page */
 .settings-section { border-top: 1px solid var(--line); margin-top: 34px; padding-top: 30px; }
