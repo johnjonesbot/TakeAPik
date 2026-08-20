@@ -25,7 +25,10 @@ export default function HomePage() {
             the pictures, and the moments worth keeping.
           </p>
           <AccessForm surface="root" />
-          <p className="privacy-note">24-hour guest sessions · Original files stay private</p>
+          <p className="privacy-note">
+            Private albums · Original files stay private ·{" "}
+            <a href="/legal">Privacy &amp; Terms</a>
+          </p>
         </div>
         <MosaicPreview />
       </section>
