@@ -152,6 +152,17 @@ button.ghost { background: none; border: 1px solid var(--line); color: var(--mut
 button.ghost:hover { color: var(--ink); }
 button.ghost.danger { border-color: rgba(255, 116, 116, 0.4); color: #ff9d9d; }
 
+/* Consolidated album tab: the upload card sits above the gallery. */
+.album-upload-card { background: var(--glass); border: 1px solid var(--line); border-radius: 20px; margin: 0 0 22px; padding: 18px; }
+.album-upload-card .upload-flow { max-width: none; }
+
+/* Tap a photo to view it full-screen. */
+.gallery-photo-button { background: none; border: 0; cursor: zoom-in; display: block; padding: 0; width: 100%; }
+.lightbox { align-items: center; background: rgba(5, 3, 10, 0.94); display: flex; flex-direction: column; gap: 14px; inset: 0; justify-content: center; padding: 26px 18px; position: fixed; z-index: 60; }
+.lightbox img { border-radius: 12px; cursor: default; max-height: 86svh; max-width: 100%; object-fit: contain; }
+.lightbox-caption { color: var(--muted); margin: 0; max-width: 640px; overflow-wrap: anywhere; text-align: center; }
+.lightbox-close { background: none; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); cursor: pointer; font-size: 16px; line-height: 1; padding: 8px 12px; position: absolute; right: 16px; top: 16px; }
+
 /* Upload flow */
 .upload-flow { display: grid; gap: 18px; max-width: 560px; }
 .upload-drop { align-items: center; background: var(--glass); border: 1.5px dashed var(--line); border-radius: 22px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 44px 24px; text-align: center; transition: border-color .2s; }

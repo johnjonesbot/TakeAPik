@@ -32,6 +32,7 @@ export function PhotoGallery({
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "idle" | "error" | "done">("loading");
+  const [viewing, setViewing] = useState<GalleryPhoto | null>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
 
@@ -65,6 +66,15 @@ export function PhotoGallery({
   }, [loadPage]);
 
   useEffect(() => {
+    if (!viewing) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setViewing(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewing]);
+
+  useEffect(() => {
     const node = sentinel.current;
     if (!node) return;
     const observer = new IntersectionObserver(
@@ -86,15 +96,22 @@ export function PhotoGallery({
       <div className="gallery-masonry">
         {photos.map((photo) => (
           <figure key={photo.id} className="gallery-item">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photo.url}
-              alt={photo.description ?? "Event photo"}
-              width={photo.width}
-              height={photo.height}
-              loading="lazy"
-              decoding="async"
-            />
+            <button
+              type="button"
+              className="gallery-photo-button"
+              aria-label={photo.description ? `View photo: ${photo.description}` : "View photo"}
+              onClick={() => setViewing(photo)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.url}
+                alt={photo.description ?? "Event photo"}
+                width={photo.width}
+                height={photo.height}
+                loading="lazy"
+                decoding="async"
+              />
+            </button>
             {photo.description ? <figcaption>{photo.description}</figcaption> : null}
             {renderExtras ? <div className="gallery-extras">{renderExtras(photo, refresh)}</div> : null}
           </figure>
@@ -102,6 +119,20 @@ export function PhotoGallery({
       </div>
       <div ref={sentinel} aria-hidden="true" />
       {state === "loading" ? <p className="gallery-status">Loading…</p> : null}
+      {viewing ? (
+        <div
+          className="lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={viewing.description ?? "Photo"}
+          onClick={() => setViewing(null)}
+        >
+          <button type="button" className="lightbox-close" aria-label="Close photo">✕</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewing.url} alt={viewing.description ?? "Event photo"} onClick={(event) => event.stopPropagation()} />
+          {viewing.description ? <p className="lightbox-caption">{viewing.description}</p> : null}
+        </div>
+      ) : null}
       {state === "error" ? (
         <p className="gallery-status">
           Couldn&apos;t load photos.{" "}

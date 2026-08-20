@@ -10,7 +10,12 @@ type Stage =
   | { step: "uploading"; progress: number }
   | { step: "done" };
 
-export function UploadForm() {
+export interface UploadFormProps {
+  /** Called after a photo is verified and published, so the gallery below can refresh. */
+  onPublished?: () => void;
+}
+
+export function UploadForm({ onPublished }: UploadFormProps) {
   const [stage, setStage] = useState<Stage>({ step: "pick" });
   const [error, setError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -42,6 +47,7 @@ export function UploadForm() {
       );
       URL.revokeObjectURL(previewUrl);
       setStage({ step: "done" });
+      onPublished?.();
     } catch (cause) {
       setError(cause instanceof UploadError ? cause.message : "Something went wrong; try again.");
       setStage({ step: "preview", prepared, previewUrl, filename });
@@ -96,10 +102,9 @@ export function UploadForm() {
 
       {stage.step === "done" ? (
         <div className="upload-done" role="status">
-          <p><strong>It's in the album.</strong></p>
+          <p><strong>It's in the album — right below.</strong></p>
           <div className="upload-actions">
             <button type="button" className="ghost" onClick={reset}>Add another</button>
-            <a className="button-link" href="/">See the album</a>
           </div>
         </div>
       ) : null}

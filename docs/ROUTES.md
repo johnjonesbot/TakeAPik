@@ -7,8 +7,8 @@ All paths live on the single `takeapik.com` origin (ADR-005).
 | Path | Audience | Purpose |
 |---|---|---|
 | `/` | Friend | Marketing root and event access form (email + code locates the album) |
-| `/a/{slug}` | Friend | Infinite album gallery |
-| `/a/{slug}/upload` | Friend | Camera/file selection, preview, description, publish |
+| `/a/{slug}` | Friend | The album: upload card above the infinite gallery; tap a photo to view it full-screen |
+| `/a/{slug}/upload` | Friend | Legacy path; redirects to `/a/{slug}` (uploading lives on the album tab) |
 | `/a/{slug}/my-uploads` | Friend | Current friend's photos |
 | `/a/{slug}/invite` | Friend | Invitation landing; prefills email from the token. The invitation email also carries the access code, so most guests just retype it |
 | `/a/{slug}/admin` | Event admin | Single settings page: event details, access code, friends & invitations, cover photo, export, password & MFA |

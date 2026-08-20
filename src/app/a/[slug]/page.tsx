@@ -1,5 +1,5 @@
 import { AccessForm } from "@/components/access-form";
-import { PhotoGallery } from "@/components/photo-gallery";
+import { AlbumView } from "@/components/album-view";
 import { TenantNav } from "@/components/tenant-nav";
 import { Wordmark } from "@/components/wordmark";
 import { getAlbumTenant, getAuthorizedAlbumActor } from "@/lib/page-context";
@@ -46,7 +46,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       <TenantNav albumName={tenant.context.displayName} slug={slug} isAdmin={authorized.actor.kind === "admin"} />
       <section className="portal-body portal-body-wide">
         <h1 className="portal-heading">The album</h1>
-        <PhotoGallery />
+        <AlbumView />
       </section>
     </main>
   );

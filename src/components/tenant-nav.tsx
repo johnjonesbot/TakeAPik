@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 
 const MEMBER_LINKS = [
   { path: "", label: "Album" },
-  { path: "/upload", label: "Upload" },
   { path: "/my-uploads", label: "My uploads" }
 ] as const;
 
