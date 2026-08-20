@@ -6,7 +6,11 @@ import { verifyTotpCode } from "@/lib/totp";
 import { findPlatformUserByEmail, findPlatformUserById } from "@/lib/repositories/platform-users";
 import { findTenantById } from "@/lib/repositories/tenants";
 import { revokeSessionsForPlatformUser, revokeSessionsForTenant } from "@/lib/repositories/sessions";
+import { appUrl } from "@/lib/hosts";
+import { getLogger } from "@/lib/logger";
+import { getMailer } from "@/lib/mailer";
 import { computeRetention } from "@/lib/retention";
+import { buildWelcomeEmail } from "@/lib/welcome-email";
 import { getStorage } from "@/lib/storage";
 import { writeAuditEvent } from "@/services/audit";
 import { provisionTenant } from "@/services/provisioning";
@@ -76,6 +80,8 @@ export interface ProvisionResponse {
   accessCode: string;
   /** Set only when a new owner account was created; shown once. */
   temporaryPassword?: string;
+  /** False when the onboarding email could not be sent; the credentials above are then the only copy. */
+  welcomeEmailSent: boolean;
 }
 
 export async function provisionTenantAsSuperAdmin(
@@ -96,11 +102,38 @@ export async function provisionTenantAsSuperAdmin(
     actorPlatformUserId: actor.platformUserId
   });
 
+  // Onboarding email with credentials and instructions, sent the moment the
+  // account exists. Best-effort: a mail failure never undoes provisioning —
+  // the same credentials are shown once in the provisioning response.
+  let welcomeEmailSent = true;
+  try {
+    await getMailer().send({
+      to: input.ownerEmail,
+      ...buildWelcomeEmail({
+        ownerName: input.ownerDisplayName,
+        ownerEmail: input.ownerEmail,
+        eventName: input.eventName,
+        eventDate: input.eventStartsAt,
+        albumUrl: appUrl(`/a/${result.tenant.slug}`),
+        adminUrl: appUrl(`/a/${result.tenant.slug}/admin`),
+        accessCode: result.accessCode,
+        temporaryPassword
+      })
+    });
+  } catch (error) {
+    welcomeEmailSent = false;
+    getLogger().warn("welcome email failed after provisioning", {
+      tenantId: result.tenant.id,
+      error: error instanceof Error ? error.message : "unknown"
+    });
+  }
+
   return {
     tenantId: result.tenant.id,
     slug: result.tenant.slug,
     accessCode: result.accessCode,
-    temporaryPassword
+    temporaryPassword,
+    welcomeEmailSent
   };
 }
 

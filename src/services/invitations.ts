@@ -4,6 +4,8 @@ import { buildInviteEmail } from "@/lib/invite-email";
 import { getMailer } from "@/lib/mailer";
 import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
 import { findEventByTenant } from "@/lib/repositories/events";
+import { findTenantById } from "@/lib/repositories/tenants";
+import { openSecret } from "@/lib/secret-box";
 import { generateOpaqueToken, hashToken } from "@/lib/tokens";
 import { writeAuditEvent } from "@/services/audit";
 import type { AdminActor } from "@/services/event-admin";
@@ -86,6 +88,16 @@ export async function sendInvitations(
 
   const event = await findEventByTenant(db, actor.tenantId);
   if (!event) return { outcome: "event-missing" };
+  // The invite email carries the code (ADR-006 makes it recoverable); legacy
+  // events without a sealed code fall back to "ask your host".
+  let accessCode: string | null = null;
+  if (event.access_code_encrypted) {
+    try {
+      accessCode = openSecret(event.access_code_encrypted, "access-code");
+    } catch {
+      accessCode = null;
+    }
+  }
 
   const targets = input.membershipIds?.length
     ? await query<TargetRow>(
@@ -110,7 +122,7 @@ export async function sendInvitations(
 
   const results: InvitationView[] = [];
   for (const target of targets) {
-    results.push(await sendOne(actor, tenantSlug, event.name, target));
+    results.push(await sendOne(actor, tenantSlug, event.name, accessCode, target));
   }
 
   await queryOne(
@@ -143,6 +155,7 @@ async function sendOne(
   actor: AdminActor,
   tenantSlug: string,
   eventName: string,
+  accessCode: string | null,
   target: TargetRow
 ): Promise<InvitationView> {
   const token = generateOpaqueToken();
@@ -159,7 +172,7 @@ async function sendOne(
   });
   if (!invitation) throw new Error("invitation insert returned no row");
 
-  return deliverInvitation(invitation, token, eventName, tenantSlug, target);
+  return deliverInvitation(invitation, token, eventName, tenantSlug, accessCode, target);
 }
 
 async function deliverInvitation(
@@ -167,6 +180,7 @@ async function deliverInvitation(
   token: string,
   eventName: string,
   tenantSlug: string,
+  accessCode: string | null,
   target: TargetRow
 ): Promise<InvitationView> {
   const db = getPool();
@@ -174,6 +188,7 @@ async function deliverInvitation(
     friendName: target.friend_name,
     eventName,
     inviteUrl: canonicalInviteUrl(tenantSlug, token),
+    accessCode,
     expiresAt: invitation.expires_at
   });
 
@@ -242,7 +257,15 @@ export async function resendInvitation(actor: AdminActor, tenantSlug: string, in
   );
   if (!refreshed) return { outcome: "not-found" };
 
-  const view = await deliverInvitation(refreshed, token, event.name, tenantSlug, target);
+  let resendCode: string | null = null;
+  if (event.access_code_encrypted) {
+    try {
+      resendCode = openSecret(event.access_code_encrypted, "access-code");
+    } catch {
+      resendCode = null;
+    }
+  }
+  const view = await deliverInvitation(refreshed, token, event.name, tenantSlug, resendCode, target);
   return { outcome: "sent", invitation: view };
 }
 
@@ -270,4 +293,20 @@ export async function acceptInvitation(token: string, tenantId: string): Promise
   );
   if (!row) return null;
   return { membershipEmail: row.email, eventName: row.event_name };
+}
+
+
+/**
+ * Every friend the admin adds receives their invitation immediately. The
+ * idempotency key is derived from the membership, so retries can never email
+ * the same person twice; failures record on the invitation row for the
+ * admin's resend flow and never break the add itself.
+ */
+export async function sendInvitationForNewMember(actor: AdminActor, membershipId: string): Promise<void> {
+  const tenant = await findTenantById(getPool(), actor.tenantId);
+  if (!tenant) return;
+  await sendInvitations(actor, tenant.slug, {
+    membershipIds: [membershipId],
+    idempotencyKey: `auto:${membershipId}`
+  });
 }

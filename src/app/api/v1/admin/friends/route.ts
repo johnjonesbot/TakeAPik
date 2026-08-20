@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdminActor } from "@/lib/admin-route";
 import { jsonError, jsonSuccess, jsonValidationError, newRequestId } from "@/lib/http";
-import { createFriend, importFriends, listFriends } from "@/services/friends";
+import { createFriendAndInvite, importFriends, listFriends } from "@/services/friends";
 
 const friendSchema = z.object({
   email: z.string().email().max(320),
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return jsonSuccess(result, requestId);
   }
 
-  const result = await createFriend(gate.actor, parsed.data);
+  const result = await createFriendAndInvite(gate.actor, parsed.data);
   if (result.outcome === "duplicate-email") {
     return jsonError("CONFLICT", "That email is already on the list", { requestId });
   }

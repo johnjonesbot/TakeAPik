@@ -10,7 +10,7 @@ All paths live on the single `takeapik.com` origin (ADR-005).
 | `/a/{slug}` | Friend | Infinite album gallery |
 | `/a/{slug}/upload` | Friend | Camera/file selection, preview, description, publish |
 | `/a/{slug}/my-uploads` | Friend | Current friend's photos |
-| `/a/{slug}/invite` | Friend | Invitation landing; prefills email from the token, still requires the access code |
+| `/a/{slug}/invite` | Friend | Invitation landing; prefills email from the token. The invitation email also carries the access code, so most guests just retype it |
 | `/a/{slug}/admin` | Event admin | Single settings page: event details, access code, friends & invitations, cover photo, export, password & MFA |
 | `/super-admin` | Super-admin | Accounts console: provisioning, retention flags, password resets, album and account deletion |
 
@@ -78,7 +78,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 |---|---|---|
 | `GET/PATCH` | `/api/v1/admin/event` | Read/update name, timezone, and the required event date; includes retention-window state (ADR-007). Rotate access code separately |
 | `POST` | `/api/v1/admin/event/access-code` | Step-up auth; rotates the code. The current code stays visible via `GET /admin/event` (ADR-006) |
-| `GET/POST` | `/api/v1/admin/friends` | List/create memberships |
+| `GET/POST` | `/api/v1/admin/friends` | List/create memberships; every created friend is immediately emailed their invitation (personal link + access code) |
 | `PATCH/DELETE` | `/api/v1/admin/friends/{id}` | Edit or disable membership |
 | `GET` | `/api/v1/admin/invitations` | List invitations and delivery state |
 | `POST` | `/api/v1/admin/invitations/send` | Send selected IDs or all unsent; idempotency key required |

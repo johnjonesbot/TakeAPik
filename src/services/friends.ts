@@ -10,6 +10,8 @@ import { revokeSessionsForMembership } from "@/lib/repositories/sessions";
 import type { MembershipRow } from "@/lib/repositories/types";
 import { queryOne } from "@/lib/db";
 import { writeAuditEvent } from "@/services/audit";
+import { sendInvitationForNewMember } from "@/services/invitations";
+import { getLogger } from "@/lib/logger";
 import type { AdminActor } from "@/services/event-admin";
 
 export interface FriendView {
@@ -68,6 +70,30 @@ export async function createFriend(
   }
 }
 
+/**
+ * createFriend plus the product rule that every added friend immediately
+ * receives their invitation email. The email is best-effort: a send failure
+ * records on the invitation row (visible and resendable in the admin UI) and
+ * never undoes the add.
+ */
+export async function createFriendAndInvite(
+  actor: AdminActor,
+  input: { email: string; name: string }
+): Promise<CreateFriendResult> {
+  const result = await createFriend(actor, input);
+  if (result.outcome === "created") {
+    try {
+      await sendInvitationForNewMember(actor, result.friend.id);
+    } catch (error) {
+      getLogger().warn("auto-invite failed after friend add", {
+        membershipId: result.friend.id,
+        error: error instanceof Error ? error.message : "unknown"
+      });
+    }
+  }
+  return result;
+}
+
 export interface ImportResult {
   created: FriendView[];
   duplicates: string[];
@@ -81,7 +107,7 @@ export async function importFriends(
   const created: FriendView[] = [];
   const duplicates: string[] = [];
   for (const row of rows) {
-    const result = await createFriend(actor, row);
+    const result = await createFriendAndInvite(actor, row);
     if (result.outcome === "created") created.push(result.friend);
     else duplicates.push(normalizeEmail(row.email));
   }

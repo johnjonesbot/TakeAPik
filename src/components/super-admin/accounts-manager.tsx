@@ -25,6 +25,7 @@ interface Provisioned {
   slug: string;
   accessCode: string;
   temporaryPassword?: string;
+  welcomeEmailSent: boolean;
 }
 
 interface Envelope<T> {
@@ -198,7 +199,11 @@ export function AccountsManager() {
                 <> · owner temp password <strong>{provisioned.temporaryPassword}</strong></>
               ) : null}
             </p>
-            <p style={{ margin: "6px 0 0", fontSize: 12 }}>Shown once — pass these to the host now.</p>
+            <p style={{ margin: "6px 0 0", fontSize: 12 }}>
+              {provisioned.welcomeEmailSent
+                ? "The host received a welcome email with these credentials and instructions."
+                : "Warning: the welcome email failed to send — pass these to the host yourself; they are shown once."}
+            </p>
           </div>
         ) : null}
       </form>

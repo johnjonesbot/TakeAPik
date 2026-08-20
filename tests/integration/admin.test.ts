@@ -7,7 +7,7 @@ import { findEventByTenant } from "@/lib/repositories/events";
 import { setStorageForTesting } from "@/lib/storage";
 import { resolveActorFromToken, issueSession } from "@/services/sessions";
 import { acceptInvitation, resendInvitation, sendInvitations } from "@/services/invitations";
-import { createFriend, disableFriend, importFriends, listFriends } from "@/services/friends";
+import { createFriend, createFriendAndInvite, disableFriend, importFriends, listFriends } from "@/services/friends";
 import { getEventSettings, rotateEventAccessCode, setCoverPhoto, updateEventSettings, type AdminActor } from "@/services/event-admin";
 import type { RateLimiter } from "@/lib/rate-limit";
 import { FakeStorage } from "./fake-storage";
@@ -142,25 +142,19 @@ describe("event administration", () => {
     expect(await disableFriend(actor, actor.membershipId)).toBe("cannot-disable-self");
   });
 
-  it("send-all emails every unsent friend once and replays idempotently", async () => {
+  it("adding a friend auto-sends an invitation carrying link and access code", async () => {
     const tenant = await provisionTestTenant({ eventName: "Maya & Leo" });
     const actor = adminActor(tenant);
-    await createFriend(actor, { email: "one@example.test", name: "One" });
-    await createFriend(actor, { email: "two@example.test", name: "Two" });
+    await createFriendAndInvite(actor, { email: "one@example.test", name: "One" });
+    await createFriendAndInvite(actor, { email: "two@example.test", name: "Two" });
 
-    const first = await sendInvitations(actor, tenant.tenant.slug, { idempotencyKey: "key-1234567" }, noLimit);
-    expect(first.outcome).toBe("sent");
-    if (first.outcome !== "sent") return;
-    expect(first.invitations.filter((invitation) => invitation.status === "sent")).toHaveLength(2);
+    // Every added friend was emailed immediately, with credentials included.
     expect(mailer.sent).toHaveLength(2);
     expect(mailer.sent[0]?.text).toContain("/invite?token=");
-    expect(mailer.sent[0]?.text).not.toMatch(/\b\d{8}\b/); // never the access code
+    expect(mailer.sent[0]?.text).toContain(tenant.accessCode);
+    expect(mailer.sent[0]?.html).toContain(tenant.accessCode);
 
-    const replay = await sendInvitations(actor, tenant.tenant.slug, { idempotencyKey: "key-1234567" }, noLimit);
-    expect(replay.outcome === "sent" && replay.replayed).toBe(true);
-    expect(mailer.sent).toHaveLength(2);
-
-    // A later send-all with a fresh key finds nothing unsent.
+    // Send-all afterwards finds nothing unsent and never re-emails anyone.
     const again = await sendInvitations(actor, tenant.tenant.slug, { idempotencyKey: "key-7654321" }, noLimit);
     expect(again.outcome === "sent" && again.invitations).toHaveLength(0);
     expect(mailer.sent).toHaveLength(2);

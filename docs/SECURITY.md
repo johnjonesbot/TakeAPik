@@ -22,7 +22,7 @@ Private photographs, guest emails, admin credentials, access codes, session/invi
 - Session cookie: `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400`, host-only.
 - Rotate/revoke sessions on privilege changes, password change, membership disable, access-code rotation (policy choice), and archive.
 - Use generic login failures and constant-behavior comparisons to limit account/event enumeration.
-- Guest login is member email + eight-digit access code (ADR-003); both must match the tenant resolved from the album slug (or located server-side from email + code at the marketing root — ADR-005), and the code is verified with a keyed slow hash even when the email is unknown.
+- Guest login is member email + eight-digit access code (ADR-003); both must match the tenant resolved from the album slug (or located server-side from email + code at the marketing root — ADR-005), and the code is verified with a keyed slow hash even when the email is unknown. Product decision: invitation and onboarding emails deliver both the personal link and the code, so a compromised guest mailbox grants album access for that member — the mailbox is treated as the trust anchor, as with any emailed credential.
 
 ### Web protections
 
