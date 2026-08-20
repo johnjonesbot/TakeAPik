@@ -26,6 +26,8 @@ interface Provisioned {
   accessCode: string;
   temporaryPassword?: string;
   welcomeEmailSent: boolean;
+  /** Captured from the form so the credential card can show the sign-in user. */
+  ownerEmail: string;
 }
 
 interface Envelope<T> {
@@ -81,7 +83,7 @@ export function AccountsManager() {
     });
     const payload = (await response.json()) as Envelope<{ provisioned: Provisioned }>;
     if (response.ok && payload.data) {
-      setProvisioned(payload.data.provisioned);
+      setProvisioned({ ...payload.data.provisioned, ownerEmail: String(formData.get("ownerEmail") ?? "") });
       form.reset();
       await refresh();
     } else {
@@ -193,13 +195,16 @@ export function AccountsManager() {
         <button type="submit">Provision</button>
         {provisioned ? (
           <div className="rotated-code" role="status">
-            <p style={{ margin: 0 }}>
-              Created <strong>{provisioned.slug}</strong> · access code <strong>{provisioned.accessCode}</strong>
-              {provisioned.temporaryPassword ? (
-                <> · owner temp password <strong>{provisioned.temporaryPassword}</strong></>
-              ) : null}
-            </p>
-            <p style={{ margin: "6px 0 0", fontSize: 12 }}>
+            <p style={{ margin: 0 }}>Created :</p>
+            <p style={{ margin: "4px 0 0" }}>· takeapik.com/a/{provisioned.slug}</p>
+            <p style={{ margin: "4px 0 0" }}>· access code <strong>{provisioned.accessCode}</strong></p>
+            <p style={{ margin: "4px 0 0" }}>· user: <strong>{provisioned.ownerEmail}</strong></p>
+            {provisioned.temporaryPassword ? (
+              <p style={{ margin: "4px 0 0" }}>· owner temp password : <strong>{provisioned.temporaryPassword}</strong></p>
+            ) : (
+              <p style={{ margin: "4px 0 0" }}>· password: the host&apos;s existing one</p>
+            )}
+            <p style={{ margin: "8px 0 0", fontSize: 12 }}>
               {provisioned.welcomeEmailSent
                 ? "The host received a welcome email with these credentials and instructions."
                 : "Warning: the welcome email failed to send — pass these to the host yourself; they are shown once."}
