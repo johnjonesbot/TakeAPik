@@ -1,6 +1,7 @@
 import { Wordmark } from "@/components/wordmark";
 import { AdminLoginForm } from "@/components/admin-login-form";
 import { AccountsManager } from "@/components/super-admin/accounts-manager";
+import { PlatformNav } from "@/components/super-admin/platform-nav";
 import { getSuperAdminPageActor } from "@/lib/page-context";
 
 export const dynamic = "force-dynamic";
@@ -24,13 +25,7 @@ export default async function SuperAdminPage() {
 
   return (
     <main className="portal-shell">
-      <nav className="tenant-nav" aria-label="Platform navigation">
-        <span className="tenant-nav-name">Platform</span>
-        <div className="tenant-nav-links">
-          <a href="/super-admin" aria-current="page">Accounts</a>
-          <a href="/super-admin/account">Account</a>
-        </div>
-      </nav>
+      <PlatformNav current="accounts" />
       <section className="portal-body">
         <h1 className="portal-heading">Accounts</h1>
         <AccountsManager />

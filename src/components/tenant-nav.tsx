@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 const MEMBER_LINKS = [
@@ -27,6 +28,7 @@ interface TenantNavProps {
 
 export function TenantNav({ albumName, slug, isAdmin }: TenantNavProps) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
   const base = `/a/${slug}`;
   const links = [
     ...MEMBER_LINKS.map((link) => ({ href: `${base}${link.path}`, label: link.label })),
@@ -34,18 +36,29 @@ export function TenantNav({ albumName, slug, isAdmin }: TenantNavProps) {
   ];
 
   return (
-    <nav className="tenant-nav" aria-label="Album navigation">
+    <nav className={`tenant-nav${open ? " is-open" : ""}`} aria-label="Album navigation">
       <span className="tenant-nav-name">{albumName}</span>
-      <div className="tenant-nav-links">
-        {links.map((link) => (
-          <a key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined}>
-            {link.label}
-          </a>
-        ))}
-      </div>
-      <button type="button" className="tenant-nav-logout" onClick={() => void logout()}>
-        Sign out
+      <button
+        type="button"
+        className="nav-toggle"
+        aria-expanded={open}
+        aria-label={open ? "Close menu" : "Open menu"}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {open ? "✕" : "☰"}
       </button>
+      <div className="tenant-nav-menu">
+        <div className="tenant-nav-links">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <button type="button" className="tenant-nav-logout" onClick={() => void logout()}>
+          Sign out
+        </button>
+      </div>
     </nav>
   );
 }

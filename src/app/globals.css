@@ -104,6 +104,8 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 .portal-shell { display: flex; flex-direction: column; min-height: 100svh; }
 .tenant-nav { align-items: center; backdrop-filter: blur(20px); background: rgba(13, 7, 21, 0.82); border-bottom: 1px solid var(--line); display: flex; gap: 18px; padding: 14px clamp(16px, 4vw, 40px); position: sticky; top: 0; z-index: 10; }
 .tenant-nav-name { font-weight: 800; letter-spacing: -0.03em; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tenant-nav-menu { align-items: center; display: flex; gap: 18px; min-width: 0; }
+.nav-toggle { background: none; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); cursor: pointer; display: none; font-size: 17px; line-height: 1; padding: 7px 11px; }
 .tenant-nav-links { display: flex; gap: 4px; overflow-x: auto; }
 .tenant-nav-links a { border-radius: 99px; color: var(--muted); font-size: 14px; padding: 8px 14px; text-decoration: none; white-space: nowrap; }
 .tenant-nav-links a[aria-current="page"] { background: var(--glass); color: var(--ink); }
@@ -113,9 +115,25 @@ h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(58px, 7vw,
 .portal-body { margin: 0 auto; max-width: 1100px; padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 40px) 64px; width: 100%; }
 .portal-heading { font-size: clamp(34px, 4.5vw, 52px); margin: 0 0 18px; }
 .portal-placeholder { background: var(--glass); border: 1px dashed var(--line); border-radius: 18px; color: var(--muted); line-height: 1.65; max-width: 620px; padding: 22px; }
-@media (max-width: 520px) {
-  .tenant-nav { gap: 10px; }
-  .tenant-nav-name { font-size: 14px; }
+/* Mobile: the nav collapses behind a hamburger; the menu drops down full-width. */
+@media (max-width: 640px) {
+  .tenant-nav { flex-wrap: wrap; gap: 10px; }
+  .tenant-nav-name { font-size: 15px; }
+  .nav-toggle { display: block; }
+  .tenant-nav-menu { display: none; }
+  .tenant-nav.is-open .tenant-nav-menu {
+    align-items: stretch;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 12px;
+    width: 100%;
+  }
+  .tenant-nav.is-open .tenant-nav-links { flex-direction: column; gap: 2px; overflow: visible; }
+  .tenant-nav.is-open .tenant-nav-links a { padding: 11px 14px; }
+  .tenant-nav.is-open .tenant-nav-logout { padding: 11px 14px; text-align: center; }
 }
 
 /* Gallery */
