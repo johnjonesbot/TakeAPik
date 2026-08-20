@@ -31,6 +31,7 @@ export function AccountsManager() {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [purgeTarget, setPurgeTarget] = useState<AdminAccount | null>(null);
+  const [purging, setPurging] = useState(false);
   const [message, setMessage] = useState("");
 
   const refresh = useCallback(async () => {
@@ -45,7 +46,8 @@ export function AccountsManager() {
 
   async function purge(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!purgeTarget?.tenant) return;
+    if (!purgeTarget?.tenant || purging) return;
+    setPurging(true);
     const formData = new FormData(event.currentTarget);
     const response = await fetch(`/api/v1/super-admin/tenants/${purgeTarget.tenant.id}/purge`, {
       method: "POST",
@@ -63,6 +65,7 @@ export function AccountsManager() {
     } else {
       setMessage(payload.error?.message ?? "Delete failed");
     }
+    setPurging(false);
   }
 
   const term = search.trim().toLowerCase();
@@ -151,8 +154,10 @@ export function AccountsManager() {
                         <div>
                           <dt>Contents</dt>
                           <dd>
-                            {account.tenant.photoCount} photos · {account.tenant.memberCount} members · retention flag{" "}
-                            {new Date(account.tenant.flaggedAt).toLocaleDateString()}
+                            {account.tenant.photoCount} photos · {account.tenant.memberCount} members ·{" "}
+                            {account.tenant.eventStartsAt
+                              ? `retention flag ${new Date(account.tenant.flaggedAt).toLocaleDateString()}`
+                              : "no retention window until an event date is set"}
                           </dd>
                         </div>
                       </>
@@ -163,7 +168,7 @@ export function AccountsManager() {
                       </div>
                     )}
                   </dl>
-                  {account.tenant && account.tenant.photoCount + account.tenant.memberCount > 0 ? (
+                  {account.tenant && (account.tenant.photoCount > 0 || account.tenant.memberCount > 1) ? (
                     <button
                       type="button"
                       className="ghost danger"
@@ -174,6 +179,10 @@ export function AccountsManager() {
                     >
                       Delete album
                     </button>
+                  ) : account.tenant ? (
+                    <p className="panel-note">
+                      Blank slate — nothing to delete. The owner signs in, sets a new event date, and starts over.
+                    </p>
                   ) : null}
                 </div>
               ) : null}
@@ -197,7 +206,7 @@ export function AccountsManager() {
           </div>
           <div className="upload-actions">
             <button type="button" className="ghost" onClick={() => setPurgeTarget(null)}>Cancel</button>
-            <button type="submit" className="ghost danger">Delete this album permanently</button>
+            <button type="submit" className="ghost danger" disabled={purging}>{purging ? "Deleting…" : "Delete this album permanently"}</button>
           </div>
         </form>
       ) : null}
