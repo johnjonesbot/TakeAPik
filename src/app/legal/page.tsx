@@ -28,8 +28,8 @@ export default function LegalPage() {
         <p>
           TakeAPik (&ldquo;TakeAPik,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) provides private, event-scoped
           photo albums. This policy explains what we collect, why, how we protect it, and the choices you have.
-          It applies to the TakeAPik website and service at takeapik.com. The service is operated by [LEGAL ENTITY
-          NAME], [ADDRESS], reachable at [PRIVACY CONTACT EMAIL].
+          It applies to the TakeAPik website and service at takeapik.com. The service is operated by Brand Works
+          Media LLC, 2125 Biscayne Blvd Ste 204-21559, Miami, FL 33137, reachable at privacy@brandworksmedia.com.
         </p>
 
         <h2>1. The roles involved</h2>
@@ -109,7 +109,7 @@ export default function LegalPage() {
         <p>
           Depending on where you live, you may have rights to access, correct, export, or delete your personal
           data, and to object to or restrict certain processing. Hosts can manage guest data directly in their
-          album settings. For other requests, contact [PRIVACY CONTACT EMAIL]; we will respond within the period
+          album settings. For other requests, contact privacy@brandworksmedia.com; we will respond within the period
           required by applicable law. You can decline non-essential cookies; TakeAPik uses only the strictly
           necessary cookie that keeps you signed in.
         </p>
@@ -193,7 +193,7 @@ export default function LegalPage() {
         </p>
 
         <h2>9. Contact</h2>
-        <p>Questions about these terms or your data: [CONTACT EMAIL].</p>
+        <p>Questions about these terms or your data: privacy@brandworksmedia.com.</p>
 
         <p className="legal-footer-note">
           <a href="/">Back to takeapik.com</a>
