@@ -35,6 +35,12 @@ const envSchema = z.object({
   MAX_IMAGE_WIDTH: z.coerce.number().int().positive().default(1920),
 
   SUPER_ADMIN_BOOTSTRAP_EMAIL: z.string().optional(),
+
+  // android-sms-gateway (SMSGate) for guest SMS invites; unset = SMS disabled.
+  SMS_GATEWAY_URL: z.string().optional(),
+  SMS_GATEWAY_USERNAME: z.string().optional(),
+  SMS_GATEWAY_PASSWORD: z.string().optional(),
+
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info")
 });
 

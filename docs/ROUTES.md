@@ -41,7 +41,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 
 | Method | Endpoint | Notes |
 |---|---|---|
-| `POST` | `/api/v1/auth/friend` | Email + 8-digit access code (ADR-003); rate-limited. With a `slug` (login from `/a/{slug}`) the tenant is resolved server-side from it; without one (marketing root) the tenant is located from email + code (ADR-005). Sets the host-only session cookie directly — same origin, no handoff |
+| `POST` | `/api/v1/auth/friend` | `identifier` (email OR phone) + 8-digit access code (ADR-003); rate-limited. With a `slug` the tenant is resolved from it; without one the tenant is located from identifier + code (ADR-005). Sets the host-only session cookie directly |
 | `POST` | `/api/v1/auth/admin` | Admin email/password and optional MFA challenge |
 | `POST` | `/api/v1/auth/logout` | Revokes current session and clears cookie |
 | `GET` | `/api/v1/session` | Minimal actor and tenant context |
@@ -78,7 +78,7 @@ Use stable codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND
 |---|---|---|
 | `GET/PATCH` | `/api/v1/admin/event` | Read/update name, timezone, and the required event date; includes retention-window state (ADR-007). Rotate access code separately |
 | `POST` | `/api/v1/admin/event/access-code` | Step-up auth; rotates the code. The current code stays visible via `GET /admin/event` (ADR-006) |
-| `GET/POST` | `/api/v1/admin/friends` | List/create memberships; every created friend is immediately emailed their invitation (personal link + access code) |
+| `GET/POST` | `/api/v1/admin/friends` | List/create guests (name + email and/or phone; at least one). Each new guest is invited automatically — SMS when a phone is present (android-sms-gateway), otherwise email; both carry the link + access code |
 | `PATCH/DELETE` | `/api/v1/admin/friends/{id}` | Edit or disable membership |
 | `GET` | `/api/v1/admin/invitations` | List invitations and delivery state |
 | `POST` | `/api/v1/admin/invitations/send` | Send selected IDs or all unsent; idempotency key required |

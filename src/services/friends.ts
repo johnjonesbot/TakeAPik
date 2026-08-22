@@ -1,5 +1,6 @@
 import { getPool, isUniqueViolation, withTransaction } from "@/lib/db";
 import { normalizeEmail } from "@/lib/normalize";
+import { normalizePhone } from "@/lib/phone";
 import {
   createMembership,
   disableMembership,
@@ -16,7 +17,8 @@ import type { AdminActor } from "@/services/event-admin";
 
 export interface FriendView {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   name: string;
   role: "admin" | "friend";
   disabled: boolean;
@@ -27,6 +29,7 @@ function toView(row: MembershipRow): FriendView {
   return {
     id: row.id,
     email: row.email,
+    phone: row.phone,
     name: row.friend_name,
     role: row.role,
     disabled: row.disabled_at !== null,
@@ -40,18 +43,29 @@ export async function listFriends(actor: AdminActor): Promise<FriendView[]> {
 
 export type CreateFriendResult =
   | { outcome: "created"; friend: FriendView }
-  | { outcome: "duplicate-email" };
+  | { outcome: "duplicate-email" }
+  | { outcome: "invalid-contact" };
+
+export interface CreateFriendInput {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+}
 
 export async function createFriend(
   actor: AdminActor,
-  input: { email: string; name: string }
+  input: CreateFriendInput
 ): Promise<CreateFriendResult> {
-  const email = normalizeEmail(input.email);
+  const email = input.email && input.email.trim() ? normalizeEmail(input.email) : null;
+  const phone = input.phone && input.phone.trim() ? normalizePhone(input.phone) : null;
+  if (input.phone && input.phone.trim() && !phone) return { outcome: "invalid-contact" };
+  if (!email && !phone) return { outcome: "invalid-contact" };
   try {
     return await withTransaction(async (client) => {
       const membership = await createMembership(client, {
         tenantId: actor.tenantId,
         email,
+        phone,
         friendName: input.name.trim()
       });
       await writeAuditEvent(client, {
@@ -78,7 +92,7 @@ export async function createFriend(
  */
 export async function createFriendAndInvite(
   actor: AdminActor,
-  input: { email: string; name: string }
+  input: CreateFriendInput
 ): Promise<CreateFriendResult> {
   const result = await createFriend(actor, input);
   if (result.outcome === "created") {

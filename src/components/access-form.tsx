@@ -32,7 +32,7 @@ export function AccessForm({ surface = "root", slug, defaultEmail }: AccessFormP
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: formData.get("email"),
+          identifier: formData.get("identifier"),
           accessCode: formData.get("code"),
           ...(surface === "tenant" && slug ? { slug } : {})
         })
@@ -54,13 +54,13 @@ export function AccessForm({ surface = "root", slug, defaultEmail }: AccessFormP
   return (
     <form className="access-card" onSubmit={submit} aria-label="Access an event album">
       <div className="field">
-        <label htmlFor="email">Your email</label>
+        <label htmlFor="identifier">Your email or phone</label>
         <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
+          id="identifier"
+          name="identifier"
+          type="text"
+          autoComplete="username"
+          placeholder="you@example.com or +1 555 123 4567"
           defaultValue={defaultEmail}
           required
         />

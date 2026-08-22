@@ -1,6 +1,8 @@
 import { getPool, query, queryOne, withTransaction } from "@/lib/db";
 import { appUrl } from "@/lib/hosts";
 import { buildInviteEmail } from "@/lib/invite-email";
+import { buildInviteSms } from "@/lib/invite-sms";
+import { getSmsSender } from "@/lib/sms";
 import { getMailer } from "@/lib/mailer";
 import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
 import { findEventByTenant } from "@/lib/repositories/events";
@@ -57,7 +59,8 @@ export type SendInvitationsResult =
 
 interface TargetRow {
   membership_id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   friend_name: string;
 }
 
@@ -102,13 +105,13 @@ export async function sendInvitations(
   const targets = input.membershipIds?.length
     ? await query<TargetRow>(
         db,
-        `SELECT id AS membership_id, email, friend_name FROM memberships
+        `SELECT id AS membership_id, email, phone, friend_name FROM memberships
          WHERE tenant_id = $1 AND id = ANY($2::uuid[]) AND disabled_at IS NULL`,
         [actor.tenantId, input.membershipIds]
       )
     : await query<TargetRow>(
         db,
-        `SELECT m.id AS membership_id, m.email, m.friend_name FROM memberships m
+        `SELECT m.id AS membership_id, m.email, m.phone, m.friend_name FROM memberships m
          WHERE m.tenant_id = $1 AND m.disabled_at IS NULL AND m.role = 'friend'
            AND NOT EXISTS (
              SELECT 1 FROM invitations i
@@ -184,23 +187,37 @@ async function deliverInvitation(
   target: TargetRow
 ): Promise<InvitationView> {
   const db = getPool();
-  const content = buildInviteEmail({
-    friendName: target.friend_name,
-    eventName,
-    inviteUrl: canonicalInviteUrl(tenantSlug, token),
-    accessCode,
-    expiresAt: invitation.expires_at
-  });
+  const inviteUrl = canonicalInviteUrl(tenantSlug, token);
 
   try {
-    const sent = await getMailer().send({ to: target.email, ...content });
+    let messageId: string;
+    if (target.phone) {
+      // Prefer SMS when a phone is on file (per product rule).
+      const sms = await getSmsSender().send({
+        to: target.phone,
+        text: buildInviteSms({ eventName, inviteUrl, accessCode })
+      });
+      messageId = sms.messageId;
+    } else if (target.email) {
+      const content = buildInviteEmail({
+        friendName: target.friend_name,
+        eventName,
+        inviteUrl,
+        accessCode,
+        expiresAt: invitation.expires_at
+      });
+      const sent = await getMailer().send({ to: target.email, ...content });
+      messageId = sent.messageId;
+    } else {
+      throw new Error("no-contact");
+    }
     const updated = await queryOne<InvitationRow>(
       db,
       `UPDATE invitations
        SET status = 'sent', sent_at = now(), attempts = attempts + 1, provider_message_id = $3, failure_reason = NULL
        WHERE tenant_id = $1 AND id = $2
        RETURNING *`,
-      [invitation.tenant_id, invitation.id, sent.messageId]
+      [invitation.tenant_id, invitation.id, messageId]
     );
     return toView(updated ?? invitation);
   } catch (error) {
@@ -242,7 +259,7 @@ export async function resendInvitation(actor: AdminActor, tenantSlug: string, in
   const event = await findEventByTenant(db, actor.tenantId);
   const target = await queryOne<TargetRow>(
     db,
-    "SELECT id AS membership_id, email, friend_name FROM memberships WHERE tenant_id = $1 AND id = $2 AND disabled_at IS NULL",
+    "SELECT id AS membership_id, email, phone, friend_name FROM memberships WHERE tenant_id = $1 AND id = $2 AND disabled_at IS NULL",
     [actor.tenantId, invitation.membership_id]
   );
   if (!event || !target) return { outcome: "not-found" };

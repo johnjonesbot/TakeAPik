@@ -3,14 +3,16 @@ import { hashAccessCode, verifyAccessCode } from "@/lib/access-code";
 import { normalizeEmail } from "@/lib/normalize";
 import { PostgresRateLimiter, type RateLimiter } from "@/lib/rate-limit";
 import { findEventByTenant } from "@/lib/repositories/events";
-import { findActiveMembershipByEmail } from "@/lib/repositories/memberships";
+import { findActiveMembershipByEmail, findActiveMembershipByPhone } from "@/lib/repositories/memberships";
+import { normalizePhone } from "@/lib/phone";
 import { writeAuditEvent } from "@/services/audit";
 import { issueSession, type IssuedSession } from "@/services/sessions";
 import type { TenantContext } from "@/services/tenant-context";
 
 export interface FriendLoginInput {
   tenant: TenantContext;
-  email: string;
+  /** Email address or phone number. */
+  identifier: string;
   accessCode: string;
   ipHash?: string;
   userAgentHash?: string;
@@ -38,17 +40,21 @@ export async function loginFriend(
   limiter: RateLimiter = new PostgresRateLimiter(getPool())
 ): Promise<FriendLoginResult> {
   const db = getPool();
-  const email = normalizeEmail(input.email);
+  const phone = normalizePhone(input.identifier);
+  const email = phone ? null : normalizeEmail(input.identifier);
+  const key = phone ?? email ?? input.identifier.trim().toLowerCase();
 
-  const [byIp, byEmail] = await Promise.all([
+  const [byIp, byId] = await Promise.all([
     input.ipHash ? limiter.consume(`friend-login:ip:${input.ipHash}`, 5, 15 * 60) : { allowed: true, remaining: 1 },
-    limiter.consume(`friend-login:email:${input.tenant.tenantId}:${email}`, 10, 60 * 60)
+    limiter.consume(`friend-login:id:${input.tenant.tenantId}:${key}`, 10, 60 * 60)
   ]);
-  if (!byIp.allowed || !byEmail.allowed) return { outcome: "rate-limited" };
+  if (!byIp.allowed || !byId.allowed) return { outcome: "rate-limited" };
 
   const [event, membership] = await Promise.all([
     findEventByTenant(db, input.tenant.tenantId),
-    findActiveMembershipByEmail(db, input.tenant.tenantId, email)
+    phone
+      ? findActiveMembershipByPhone(db, input.tenant.tenantId, phone)
+      : findActiveMembershipByEmail(db, input.tenant.tenantId, email!)
   ]);
 
   const codeHash = event && membership ? event.access_code_hash : await dummyCodeHash();
@@ -87,7 +93,8 @@ export async function loginFriend(
 }
 
 export interface LocateFriendLoginInput {
-  email: string;
+  /** Email address or phone number. */
+  identifier: string;
   accessCode: string;
   ipHash?: string;
   userAgentHash?: string;
@@ -118,14 +125,17 @@ export async function locateFriendLogin(
   limiter: RateLimiter = new PostgresRateLimiter(getPool())
 ): Promise<LocateFriendLoginResult> {
   const db = getPool();
-  const email = normalizeEmail(input.email);
+  const phone = normalizePhone(input.identifier);
+  const email = phone ? null : normalizeEmail(input.identifier);
+  const key = phone ?? email ?? input.identifier.trim().toLowerCase();
 
-  const [byIp, byEmail] = await Promise.all([
+  const [byIp, byId] = await Promise.all([
     input.ipHash ? limiter.consume(`friend-login:ip:${input.ipHash}`, 5, 15 * 60) : { allowed: true, remaining: 1 },
-    limiter.consume(`friend-login:root-email:${email}`, 10, 60 * 60)
+    limiter.consume(`friend-login:root-id:${key}`, 10, 60 * 60)
   ]);
-  if (!byIp.allowed || !byEmail.allowed) return { outcome: "rate-limited" };
+  if (!byIp.allowed || !byId.allowed) return { outcome: "rate-limited" };
 
+  const matchColumn = phone ? "m.phone" : "m.email";
   const candidates = await query<CandidateRow>(
     db,
     `SELECT t.id AS tenant_id, t.slug AS tenant_slug,
@@ -133,9 +143,9 @@ export async function locateFriendLogin(
      FROM memberships m
      JOIN tenants t ON t.id = m.tenant_id AND t.status = 'active'
      JOIN events e ON e.tenant_id = t.id
-     WHERE m.email = $1 AND m.disabled_at IS NULL
+     WHERE ${matchColumn} = $1 AND m.disabled_at IS NULL
      LIMIT 25`,
-    [email]
+    [phone ?? email]
   );
 
   let matched: CandidateRow | null = null;

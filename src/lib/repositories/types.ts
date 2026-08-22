@@ -45,7 +45,8 @@ export interface MembershipRow {
   id: string;
   tenant_id: string;
   platform_user_id: string | null;
-  email: string;
+  email: string | null;
+  phone: string | null;
   friend_name: string;
   role: MembershipRole;
   disabled_at: Date | null;

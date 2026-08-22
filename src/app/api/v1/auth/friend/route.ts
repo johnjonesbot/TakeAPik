@@ -7,10 +7,11 @@ import { locateFriendLogin, loginFriend } from "@/services/auth-friend";
 import { lookupTenantBySlug } from "@/services/tenant-context";
 
 const bodySchema = z.object({
-  email: z.string().email().max(320),
+  /** Email address or phone number. */
+  identifier: z.string().min(3).max(320),
   accessCode: z.string().regex(/^\d{8}$/, "Enter the eight-digit code"),
   /** Present when logging in from a known album (/a/:slug); absent from the
-   *  marketing root, where email + code locate the album. */
+   *  marketing root, where identifier + code locate the album. */
   slug: z.string().max(64).optional()
 });
 
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     const result = await loginFriend({
       tenant: tenant.context,
-      email: parsed.data.email,
+      identifier: parsed.data.identifier,
       accessCode: parsed.data.accessCode,
       ipHash,
       userAgentHash
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
       return jsonError("RATE_LIMITED", "Too many attempts; try again later", { requestId });
     }
     if (result.outcome === "failure") {
-      return jsonError("UNAUTHENTICATED", "Email or access code is incorrect", { requestId });
+      return jsonError("UNAUTHENTICATED", "Email/phone or access code is incorrect", { requestId });
     }
     const response = jsonSuccess({ slug: result.slug }, requestId);
     response.cookies.set(SESSION_COOKIE_NAME, result.session.token, sessionCookieOptions(result.session.session.expires_at));
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Marketing-root login: locate the album from email + code, sign in directly.
-  const located = await locateFriendLogin({ email: parsed.data.email, accessCode: parsed.data.accessCode, ipHash, userAgentHash });
+  const located = await locateFriendLogin({ identifier: parsed.data.identifier, accessCode: parsed.data.accessCode, ipHash, userAgentHash });
   if (located.outcome === "rate-limited") {
     return jsonError("RATE_LIMITED", "Too many attempts; try again later", { requestId });
   }

@@ -4,7 +4,8 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 interface Friend {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   name: string;
   role: "admin" | "friend";
   disabled: boolean;
@@ -55,7 +56,11 @@ export function FriendsManager() {
     const response = await fetch("/api/v1/admin/friends", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: formData.get("email"), name: formData.get("name") })
+      body: JSON.stringify({
+        name: formData.get("name"),
+        email: formData.get("email") || undefined,
+        phone: formData.get("phone") || undefined
+      })
     });
     const payload = (await response.json()) as Envelope<unknown>;
     if (response.ok) {
@@ -117,10 +122,15 @@ export function FriendsManager() {
           <input id="friend-name" name="name" maxLength={120} required />
         </div>
         <div className="field">
-          <label htmlFor="friend-email">Email</label>
-          <input id="friend-email" name="email" type="email" maxLength={320} required />
+          <label htmlFor="friend-email">Email (optional)</label>
+          <input id="friend-email" name="email" type="email" maxLength={320} />
         </div>
-        <button type="submit">Add to the list</button>
+        <div className="field">
+          <label htmlFor="friend-phone">Phone (optional)</label>
+          <input id="friend-phone" name="phone" type="tel" autoComplete="tel" maxLength={32} placeholder="+1 (305) 555-0142" />
+        </div>
+        <p className="panel-note">Add an email, a phone, or both. Guests with a phone get a text; otherwise an email. They&apos;re invited automatically.</p>
+        <button type="submit">Add guest</button>
       </form>
 
       <section className="admin-panel admin-panel-wide">
@@ -137,7 +147,7 @@ export function FriendsManager() {
               <li key={friend.id} className={friend.disabled ? "is-disabled" : undefined}>
                 <div className="friend-identity">
                   <strong>{friend.name}</strong>
-                  <span>{friend.email}</span>
+                  <span>{friend.phone ?? friend.email}</span>
                 </div>
                 <div className="friend-meta">
                   {friend.role === "admin" ? <span className="chip">admin</span> : null}

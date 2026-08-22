@@ -29,14 +29,14 @@ describe("authentication", () => {
     const context = toTenantContext(tenant.tenant);
     const email = tenant.owner.email;
 
-    const ok = await loginFriend({ tenant: context, email, accessCode: tenant.accessCode }, noLimit);
+    const ok = await loginFriend({ tenant: context, identifier: email, accessCode: tenant.accessCode }, noLimit);
     expect(ok.outcome).toBe("success");
 
     const wrongEmail = await loginFriend(
-      { tenant: context, email: "nobody@example.test", accessCode: tenant.accessCode },
+      { tenant: context, identifier: "nobody@example.test", accessCode: tenant.accessCode },
       noLimit
     );
-    const wrongCode = await loginFriend({ tenant: context, email, accessCode: "00000001" }, noLimit);
+    const wrongCode = await loginFriend({ tenant: context, identifier: email, accessCode: "00000001" }, noLimit);
     expect([wrongEmail.outcome, wrongCode.outcome]).toEqual(["failure", "failure"]);
   });
 
@@ -47,7 +47,7 @@ describe("authentication", () => {
     const crossTenant = await loginFriend(
       {
         tenant: toTenantContext(b.tenant),
-        email: a.owner.email,
+        identifier: a.owner.email,
         accessCode: a.accessCode
       },
       noLimit
@@ -59,7 +59,7 @@ describe("authentication", () => {
     const tenant = await provisionTestTenant({ eventName: "Maya & Leo" });
 
     const located = await locateFriendLogin(
-      { email: tenant.owner.email, accessCode: tenant.accessCode },
+      { identifier: tenant.owner.email, accessCode: tenant.accessCode },
       noLimit
     );
     expect(located.outcome).toBe("success");
@@ -75,7 +75,7 @@ describe("authentication", () => {
     }
 
     // A wrong code locates nothing.
-    const wrong = await locateFriendLogin({ email: tenant.owner.email, accessCode: "00000001" }, noLimit);
+    const wrong = await locateFriendLogin({ identifier: tenant.owner.email, accessCode: "00000001" }, noLimit);
     expect(wrong.outcome).toBe("failure");
   });
 
@@ -210,7 +210,7 @@ describe("authentication", () => {
     const attempt = () =>
       loginFriend({
         tenant: context,
-        email: "nobody@example.test",
+        identifier: "nobody@example.test",
         accessCode: "00000000",
         ipHash: "fixed-ip-hash"
       });
