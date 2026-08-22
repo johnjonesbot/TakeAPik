@@ -111,7 +111,7 @@ export function FriendsManager() {
   return (
     <div className="admin-panels">
       <form className="admin-panel" onSubmit={(event) => void addFriend(event)}>
-        <h2>Add a friend</h2>
+        <h2>Add a guest</h2>
         <div className="field">
           <label htmlFor="friend-name">Name</label>
           <input id="friend-name" name="name" maxLength={120} required />
@@ -125,7 +125,7 @@ export function FriendsManager() {
 
       <section className="admin-panel admin-panel-wide">
         <div className="panel-head">
-          <h2>Friends ({friends.filter((friend) => !friend.disabled).length})</h2>
+          <h2>Guests ({friends.filter((friend) => !friend.disabled).length})</h2>
           <button type="button" onClick={() => void sendInvites()} disabled={busy}>
             {busy ? "Sending…" : "Send all unsent invites"}
           </button>

@@ -48,14 +48,29 @@ export function PhotoGallery({
     if (downloading) return;
     setDownloading(true);
     try {
-      // Fetch the signed image as a blob so the browser saves it instead of
-      // navigating to it; on iOS this opens the image full-screen to save.
       const response = await fetch(photo.url);
       const blob = await response.blob();
+      const filename = `takeapik-${photo.id}.jpg`;
+      const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+
+      // iOS Safari's <a download> saves to Files, never the Photos library. The
+      // Web Share sheet's "Save Image" does save to Photos, so prefer it when
+      // the device can share a file; desktop/Android fall back to a direct
+      // blob download.
+      const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+      if (typeof nav.canShare === "function" && nav.canShare({ files: [file] })) {
+        try {
+          await nav.share({ files: [file], title: "Photo" });
+          return;
+        } catch {
+          // User dismissed the share sheet, or it failed — fall through to download.
+        }
+      }
+
       const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = `takeapik-${photo.id}.jpg`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();

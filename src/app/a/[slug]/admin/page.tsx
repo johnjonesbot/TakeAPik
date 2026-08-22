@@ -52,7 +52,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
         </div>
 
         <div className="settings-section">
-          <h2 className="settings-heading">Friends &amp; invitations</h2>
+          <h2 className="settings-heading">Guests &amp; invitations</h2>
           <FriendsManager />
         </div>
 
